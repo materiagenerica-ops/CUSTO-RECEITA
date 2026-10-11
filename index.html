@@ -18,7 +18,7 @@
                 <p class="text-xs text-slate-500">Ingrese sus credenciales para acceder al sistema</p>
             </div>
 
-            <form id="form-login" class="space-y-4 text-left">
+            <form id="form-login" onsubmit="intentarLogin(event)" class="space-y-4 text-left">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
                     <input type="text" id="login-usuario" required placeholder="DRPEREYRA" 
@@ -40,7 +40,7 @@
     <!-- APLICACIÓN PRINCIPAL (Oculta hasta iniciar sesión) -->
     <div id="app-container" class="hidden flex flex-col min-h-screen justify-between">
         <div>
-            <!-- Encabezado con Logotipo[cite: 1] -->
+            <!-- Encabezado con Logotipo -->
             <header class="bg-white shadow-xs border-b border-slate-200 py-4 px-6 flex items-center justify-center">
                 <div class="flex items-center space-x-3">
                     <img src="logotipoc.jpg" alt="Custo Receita Logo" class="h-12 w-auto object-contain">
@@ -190,3 +190,11 @@
 
         <!-- Pie de página -->
         <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+            Custo Receita &copy; 2026 - Gestión de Costos Gastronómicos
+        </footer>
+    </div>
+
+    <!-- Script Principal -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
