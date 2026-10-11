@@ -13,36 +13,30 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Manejo de Login
-const loginContainer = document.getElementById("login-container");
-const appContainer = document.getElementById("app-container");
-const formLogin = document.getElementById("form-login");
-const inputUsuario = document.getElementById("login-usuario");
-const inputPassword = document.getElementById("login-password");
-const loginError = document.getElementById("login-error");
-
-function verificarSesion() {
-    if (sessionStorage.getItem("auth_custo") === "true") {
-        loginContainer.classList.add("hidden");
-        appContainer.classList.remove("hidden");
-        inicializarApp();
-    }
-}
-
-formLogin.addEventListener("submit", (e) => {
+// Manejo Global de Login para evitar bloqueos por módulos
+window.intentarLogin = function(e) {
     e.preventDefault();
-    const usuario = inputUsuario.value.trim();
-    const password = inputPassword.value.trim();
+    const usuario = document.getElementById("login-usuario").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+    const loginError = document.getElementById("login-error");
 
     if (usuario === "DRPEREYRA" && password === "235689") {
         sessionStorage.setItem("auth_custo", "true");
-        loginContainer.classList.add("hidden");
-        appContainer.classList.remove("hidden");
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("app-container").classList.remove("hidden");
         inicializarApp();
     } else {
         loginError.classList.remove("hidden");
     }
-});
+};
+
+function verificarSesion() {
+    if (sessionStorage.getItem("auth_custo") === "true") {
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("app-container").classList.remove("hidden");
+        inicializarApp();
+    }
+}
 
 // Funcionalidad del botón Salir
 const btnSalir = document.getElementById("btn-salir");
@@ -79,13 +73,13 @@ const totalHistoricoSpan = document.getElementById("total-historico");
 
 function inicializarFechaHoy() {
     const hoy = new Date().toISOString().split('T')[0];
-    inputFecha.value = hoy;
+    if (inputFecha) inputFecha.value = hoy;
 }
 
 async function inicializarApp() {
     try {
         inicializarFechaHoy();
-        mensajeEstado.textContent = "Sincronizando con base de datos...";
+        if (mensajeEstado) mensajeEstado.textContent = "Sincronizando con base de datos...";
         
         cacheIngredientes = {};
         const qIng = await getDocs(collection(db, "ingredientes"));
@@ -95,21 +89,23 @@ async function inicializarApp() {
 
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
-        selectReceta.innerHTML = '<option value="">-- Seleccione un plato del menú tipo --</option>';
-        qRec.forEach(docSnap => {
-            const data = { id: docSnap.id, ...docSnap.data() };
-            cacheRecetas.push(data);
-            const opt = document.createElement("option");
-            opt.value = data.id;
-            opt.textContent = data.nombre;
-            selectReceta.appendChild(opt);
-        });
+        if (selectReceta) {
+            selectReceta.innerHTML = '<option value="">-- Seleccione un plato del menú tipo --</option>';
+            qRec.forEach(docSnap => {
+                const data = { id: docSnap.id, ...docSnap.data() };
+                cacheRecetas.push(data);
+                const opt = document.createElement("option");
+                opt.value = data.id;
+                opt.textContent = data.nombre;
+                selectReceta.appendChild(opt);
+            });
+        }
 
         await cargarHistoricoEstadisticas();
-        mensajeEstado.textContent = "";
+        if (mensajeEstado) mensajeEstado.textContent = "";
     } catch (error) {
         console.error("Error al inicializar:", error);
-        mensajeEstado.textContent = "Error al conectar con la base de datos.";
+        if (mensajeEstado) mensajeEstado.textContent = "Error al conectar con la base de datos.";
     }
 }
 
@@ -235,8 +231,8 @@ async function cargarHistoricoEstadisticas() {
     }
 }
 
-btnCalcular.addEventListener("click", calcularCostoReceta);
-btnRegistrar.addEventListener("click", registrarEstadistica);
+if (btnCalcular) btnCalcular.addEventListener("click", calcularCostoReceta);
+if (btnRegistrar) btnRegistrar.addEventListener("click", registrarEstadistica);
 
-// Ejecutar verificación de sesión inmediatamente al cargar el módulo
+// Comprobar sesión al cargar
 verificarSesion();
