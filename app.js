@@ -234,5 +234,4 @@ async function cargarHistoricoEstadisticas() {
 if (btnCalcular) btnCalcular.addEventListener("click", calcularCostoReceta);
 if (btnRegistrar) btnRegistrar.addEventListener("click", registrarEstadistica);
 
-// Comprobar sesión al cargar
 verificarSesion();
