@@ -22,12 +22,20 @@
         </header>
 
         <!-- Barra de Menú Horizontal Actualizada -->
-        <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-2.5">
-            <div class="max-w-4xl mx-auto flex items-center space-x-4">
-                <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-emerald-600 transition">🏠 Calculadora</a>
-                <a href="carga_ingredientes.html" class="text-sm font-medium text-slate-600 hover:text-emerald-600 transition">📦 Carga de Insumos</a>
-                <a href="recetas_menu.html" class="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">🍽️ Menú Tipo</a>
-                <!-- Espacio para futuros botones -->
+        <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-3">
+            <div class="max-w-5xl mx-auto flex items-center space-x-3 overflow-x-auto">
+                <a href="index.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>🏠</span> <span>Calculadora</span>
+                </a>
+                <a href="carga_ingredientes.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>📦</span> <span>Carga de Insumos</span>
+                </a>
+                <a href="recetas_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-white bg-emerald-600 px-4 py-2.5 rounded-xl shadow-sm transition">
+                    <span>🍽️</span> <span>Menú Tipo</span>
+                </a>
+                <a href="listados.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>📋</span> <span>Listado de Alimentos</span>
+                </a>
             </div>
         </nav>
     </div>
@@ -35,7 +43,7 @@
     <!-- Contenido Principal -->
     <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
         
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h2 class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
                 <span>🍽️</span> Alta de Menú Tipo / Recetas
             </h2>
@@ -47,12 +55,12 @@
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-medium text-slate-500 mb-1">Nombre del Plato</label>
                         <input type="text" id="receta-nombre" required placeholder="Ej. Strogonoff de Frango con Arroz" 
-                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Porciones que rinde</label>
                         <input type="number" id="receta-porciones" min="1" value="1" required 
-                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                 </div>
 
@@ -60,7 +68,7 @@
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Fotografía del Plato</label>
                     <input type="file" id="receta-imagen" accept="image/*" 
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                     <p class="text-[11px] text-slate-400 mt-1">Sube una imagen representativa del plato terminado.</p>
                 </div>
 
@@ -68,20 +76,20 @@
                 <div class="border-t border-slate-200 pt-4">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-sm font-bold text-slate-800">Ingredientes de la Receta (para el total de porciones)</h3>
-                        <button type="button" id="btn-agregar-fila" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                        <button type="button" id="btn-agregar-fila" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition cursor-pointer">
                             + Agregar Ingrediente
                         </button>
                     </div>
 
                     <div id="contenedor-ingredientes" class="space-y-3">
-                        <!-- Las filas de ingredientes se agregan dinámicamente aquí -->
+                        <!-- Dinámico -->
                     </div>
                 </div>
 
                 <!-- Botón Guardar -->
                 <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
                     <p id="mensaje-form" class="text-xs font-medium text-emerald-600 hidden"></p>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition shadow-sm cursor-pointer ml-auto">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer ml-auto">
                         Grabar Receta en Base
                     </button>
                 </div>
@@ -94,7 +102,6 @@
         Custo Receita &copy; 2026 - Gestión de Costos Gastronómicos
     </footer>
 
-    <!-- Script de Recetas -->
     <script type="module" src="recetas_menu.js"></script>
 </body>
 </html>
