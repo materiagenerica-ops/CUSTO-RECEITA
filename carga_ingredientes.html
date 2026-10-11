@@ -21,20 +21,28 @@
             </div>
         </header>
 
-        <!-- Barra de Menú Horizontal -->
-        <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-2.5">
-            <div class="max-w-4xl mx-auto flex items-center space-x-4">
-                <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-emerald-600 transition px-3 py-1.5">🏠 Calculadora</a>
-                <a href="carga_ingredientes.html" class="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">📦 Carga de Insumos</a>
-                <a href="recetas_menu.html" class="text-sm font-medium text-slate-600 hover:text-emerald-600 transition px-3 py-1.5">🍽️ Menú Tipo</a>
-                <!-- Espacio para futuros botones -->
+        <!-- Barra de Menú Horizontal Actualizada -->
+        <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-3">
+            <div class="max-w-5xl mx-auto flex items-center space-x-3 overflow-x-auto">
+                <a href="index.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>🏠</span> <span>Calculadora</span>
+                </a>
+                <a href="carga_ingredientes.html" class="flex items-center space-x-2 text-xs font-semibold text-white bg-emerald-600 px-4 py-2.5 rounded-xl shadow-sm transition">
+                    <span>📦</span> <span>Carga de Insumos</span>
+                </a>
+                <a href="recetas_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>🍽️</span> <span>Menú Tipo</span>
+                </a>
+                <a href="listados.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>📋</span> <span>Listado de Alimentos</span>
+                </a>
             </div>
         </nav>
     </div>
 
     <!-- Contenido Principal -->
     <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow">
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h2 class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
                 <span>📦</span> Registro y Actualización de Insumos
             </h2>
@@ -44,11 +52,11 @@
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Nombre del Insumo</label>
                     <input type="text" id="ing-nombre" required placeholder="Ej. Pechuga de Pollo" 
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Unidad Medida</label>
-                    <select id="ing-unidad" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <select id="ing-unidad" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <option value="kg">kg (Kilogramo)</option>
                         <option value="litro">litro (Litro)</option>
                         <option value="unidad">unidad (Pieza)</option>
@@ -58,10 +66,10 @@
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Precio Unitario (R$)</label>
                     <input type="number" step="0.01" id="ing-precio" required placeholder="0.00" 
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" id="btn-guardar-ing" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition duration-200 shadow-sm cursor-pointer">
+                    <button type="submit" id="btn-guardar-ing" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition duration-200 shadow-sm cursor-pointer">
                         Grabar en Base
                     </button>
                 </div>
@@ -75,7 +83,6 @@
         Custo Receita &copy; 2026 - Gestión de Costos Gastronómicos
     </footer>
 
-    <!-- Script de Carga -->
     <script type="module" src="carga_ingredientes.js"></script>
 </body>
 </html>
