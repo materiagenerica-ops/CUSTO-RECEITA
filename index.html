@@ -27,7 +27,6 @@
                 <a href="index.html" class="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">🏠 Calculadora</a>
                 <a href="carga_ingredientes.html" class="text-sm font-medium text-slate-600 hover:text-emerald-600 transition px-3 py-1.5">📦 Carga de Insumos</a>
                 <a href="recetas_menu.html" class="text-sm font-medium text-slate-600 hover:text-emerald-600 transition px-3 py-1.5">🍽️ Menú Tipo</a>
-                <!-- Espacio reservado para futuros botones -->
             </div>
         </nav>
     </div>
@@ -35,42 +34,53 @@
     <!-- Contenido Principal -->
     <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
         
-        <!-- SECCIÓN: Selección y Cálculo de Costo por Porción -->
+        <!-- SECCIÓN: Selección y Parámetros del Cálculo -->
         <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <span>🍽️</span> Selección de Menú Tipo
+                <span>🍽️</span> Selección de Menú y Comensales
             </h2>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <select id="select-receta" class="flex-grow border border-slate-300 rounded-lg px-4 py-2.5 bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <option value="">-- Seleccione un plato del menú tipo --</option>
-                </select>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Plato del Menú Tipo</label>
+                    <select id="select-receta" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">-- Seleccione un plato --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Cantidad de Comensales</label>
+                    <input type="number" id="input-comensales" min="1" value="1" 
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end">
                 <button id="btn-calcular" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition duration-200 shadow-sm cursor-pointer">
-                    Calcular Costo
+                    Calcular Costo Total
                 </button>
             </div>
         </section>
 
         <!-- Resultados del Cálculo -->
-        <div id="resultado-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hidden">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-4 mb-4 gap-4">
+        <div id="resultado-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-4 gap-4">
                 <div>
                     <h3 id="receta-nombre" class="text-xl font-bold text-slate-950">Nombre del Plato</h3>
-                    <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full inline-block mt-1">Base: 1 Porción</span>
+                    <p class="text-xs text-slate-500 mt-1">Cálculo ajustado para <span id="label-cant-comensales" class="font-bold text-slate-700">1</span> comensal(es)</p>
                 </div>
-                <!-- Contenedor para mostrar la foto del plato si la tiene -->
                 <div id="imagen-receta-container" class="hidden">
                     <img id="receta-foto" src="" alt="Foto del plato" class="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-xs">
                 </div>
             </div>
 
-            <!-- Tabla de Ingredientes -->
-            <div class="overflow-x-auto mb-6">
+            <!-- Tabla de Ingredientes (Escalada al total de comensales) -->
+            <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-slate-200 text-slate-500 text-sm">
                             <th class="py-2 px-3">Ingrediente</th>
-                            <th class="py-2 px-3">Cantidad (Porción)</th>
-                            <th class="py-2 px-3">Precio Ref. en Base (R$)</th>
+                            <th class="py-2 px-3">Cantidad Total</th>
+                            <th class="py-2 px-3">Precio Ref. (R$)</th>
                             <th class="py-2 px-3 text-right">Costo Parcial (R$)</th>
                         </tr>
                     </thead>
@@ -80,17 +90,58 @@
                 </table>
             </div>
 
-            <!-- Totales -->
-            <div class="bg-slate-50 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center border border-slate-200">
-                <div class="text-slate-600 mb-2 sm:mb-0 text-sm">
-                    Precios en Reales (BRL) - Comercios de <span class="font-semibold text-slate-800">Torres, RS</span>
+            <!-- Totales y Opciones de Registro -->
+            <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <span class="text-xs text-slate-500 block">Costo por Porción Individual:</span>
+                        <span id="costo-unitario" class="text-lg font-bold text-slate-700">R$ 0,00</span>
+                    </div>
+                    <div class="text-right sm:text-right">
+                        <span class="text-xs text-slate-500 block">Costo Total del Lote (<span id="txt-lote-comensales">1</span> porciones):</span>
+                        <span id="costo-total" class="text-2xl font-black text-emerald-600">R$ 0,00</span>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <span class="text-xs text-slate-500 block">Costo Total por Porción:</span>
-                    <span id="costo-total" class="text-2xl font-black text-emerald-600">R$ 0,00</span>
+
+                <!-- Formulario de Registro Histórico -->
+                <div class="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <label class="text-xs font-medium text-slate-600 whitespace-nowrap">Fecha de Registro:</label>
+                        <input type="date" id="input-fecha" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <button id="btn-registrar" class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-medium px-5 py-2 rounded-lg text-sm transition shadow-sm cursor-pointer">
+                        📊 Registrar en Estadísticas
+                    </button>
                 </div>
+                <p id="mensaje-registro" class="text-xs text-center text-emerald-600 font-medium hidden"></p>
             </div>
         </div>
+
+        <!-- SECCIÓN: Estadísticas e Histórico General -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <span>📈</span> Estadísticas e Histórico de Producción
+                </h2>
+                <span id="total-historico" class="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg">Total Acumulado: R$ 0,00</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-500 text-xs">
+                            <th class="py-2 px-3">Fecha</th>
+                            <th class="py-2 px-3">Plato Preparado</th>
+                            <th class="py-2 px-3">Comensales</th>
+                            <th class="py-2 px-3 text-right">Costo Total (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-historico-cuerpo" class="divide-y divide-slate-100 text-sm">
+                        <!-- Histórico dinámico -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
         <!-- Estado general -->
         <div id="mensaje-estado" class="text-center text-slate-400 text-sm py-2"></div>
