@@ -24,6 +24,31 @@ const mensajeForm = document.getElementById("mensaje-form");
 const tablaIngredientesAdmin = document.getElementById("tabla-ingredientes-admin");
 const tituloForm = document.getElementById("titulo-form");
 
+// Función inteligente para asignar un ícono según el nombre del alimento
+function obtenerIconoAlimento(nombre) {
+    const n = nombre.toLowerCase();
+    if (n.includes("pollo") || n.includes("frango") || n.includes("ave")) return "🍗";
+    if (n.includes("carne") || n.includes("bovino") || n.includes("asado") || n.includes("costilla")) return "🥩";
+    if (n.includes("cerdo") || n.includes("puerco") || n.includes("suino") || n.includes("chacinado")) return "🥓";
+    if (n.includes("pescado") || n.includes("peixe") || n.includes("atun") || n.includes("salmón")) return "🐟";
+    if (n.includes("arroz")) return "🍚";
+    if (n.includes("harina") || n.includes("trigo") || n.includes("pan") || n.includes("masa")) return "🌾";
+    if (n.includes("aceite") || n.includes("óleo") || n.includes("girasol") || n.includes("mantequilla")) return "🍾";
+    if (n.includes("leche") || n.includes("crema") || n.includes("nata")) return "🥛";
+    if (n.includes("queso") || n.includes("mussarela") || n.includes("muzzarella")) return "🧀";
+    if (n.includes("huevo") || n.includes("ovo")) return "🥚";
+    if (n.includes("tomate") || n.includes("salsa")) return "🍅";
+    if (n.includes("cebolla") || n.includes("ajo") || n.includes("cebola")) return "🧅";
+    if (n.includes("papa") || n.includes("batata") || n.includes("mandioca")) return "🥔";
+    if (n.includes("zanahoria") || n.includes("cenoura")) return "🥕";
+    if (n.includes("lechuga") || n.includes("salada") || n.includes("verde") || n.includes("rucula")) return "🥬";
+    if (n.includes("fruta") || n.includes("banana") || n.includes("manzana") || n.includes("limon")) return "🍎";
+    if (n.includes("azucar") || n.includes("açúcar") || n.includes("dulce")) return "🧂";
+    if (n.includes("sal") || n.includes("pimienta") || n.includes("condimento") || n.includes("especi")) return "🧂";
+    if (n.includes("vino") || n.includes("cerveza") || n.includes("bebida") || n.includes("agua")) return "🍷";
+    return "📦"; // Ícono por defecto
+}
+
 async function cargarInsumosAdmin() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
@@ -37,12 +62,16 @@ async function cargarInsumosAdmin() {
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
+            const icono = obtenerIconoAlimento(data.nombre);
+            const precioFmt = (Number(String(data.precioUnitario).replace(',', '.')) || 0).toFixed(2);
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="py-3 px-3 font-medium text-slate-800">${data.nombre}</td>
                 <td class="py-3 px-3 text-slate-600">${data.unidad}</td>
-                <td class="py-3 px-3 text-slate-600 font-semibold">R$ ${(Number(String(data.precioUnitario).replace(',', '.')) || 0).toFixed(2)}</td>
+                <td class="py-3 px-3 text-slate-600 font-semibold flex items-center gap-1.5">
+                    <span>R$ ${precioFmt}</span> <span class="text-base">${icono}</span>
+                </td>
                 <td class="py-3 px-3 text-right space-x-2">
                     <button class="btn-editar bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition cursor-pointer" 
                         data-id="${id}" data-nombre="${data.nombre}" data-unidad="${data.unidad}" data-precio="${data.precioUnitario}">
