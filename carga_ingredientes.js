@@ -24,17 +24,19 @@ const mensajeForm = document.getElementById("mensaje-form");
 const tablaIngredientesAdmin = document.getElementById("tabla-ingredientes-admin");
 const tituloForm = document.getElementById("titulo-form");
 
-// Función con mapeo altamente específico para evitar repeticiones
+// Función con mapeo altamente específico y completo
 function obtenerIconoAlimento(nombre) {
     const n = nombre.toLowerCase().trim();
 
-    // Carnes, aves y pescados
-    if (n.includes("pollo") || n.includes("frango") || n.includes("pechuga") || n.includes("patlo") || n.includes("suprema")) return "🍗";
-    if (n.includes("carne") || n.includes("bovino") || n.includes("asado") || n.includes("costilla") || n.includes("alcatra") || n.includes("patinho") || n.includes("carne molida") || n.includes("carne moída")) return "🥩";
+    // Carnes, embutidos, aves y pescados
+    if (n.includes("pollo") || n.includes("frango") || n.includes("pechuga") || n.includes("suprema")) return "🍗";
+    if (n.includes("carne") || n.includes("bovino") || n.includes("asado") || n.includes("costilla") || n.includes("alcatra") || n.includes("patinho") || n.includes("molida") || n.includes("moída")) return "🥩";
     if (n.includes("cerdo") || n.includes("puerco") || n.includes("suino") || n.includes("bondiola") || n.includes("costelinha")) return "🥓";
+    if (n.includes("mortadela") || n.includes("mortadella")) return "🥓";
     if (n.includes("jamon") || n.includes("presunto") || n.includes("paleta")) return "🥪";
     if (n.includes("salchicha") || n.includes("salsicha") || n.includes("chorizo") || n.includes("linguiça")) return "🌭";
-    if (n.includes("pescado") || n.includes("peixe") || n.includes("atun") || n.includes("salmón") || n.includes("merluza")) return "🐟";
+    if (n.includes("atun") || n.includes("atúm")) return "🐟";
+    if (n.includes("pescado") || n.includes("peixe") || n.includes("salmón") || n.includes("merluza")) return "🐟";
 
     // Verduras y Hortalizas específicas
     if (n.includes("morron") || n.includes("pimiento") || n.includes("pimentão") || n.includes("aji")) return "🫑";
@@ -47,9 +49,19 @@ function obtenerIconoAlimento(nombre) {
     if (n.includes("lechuga") || n.includes("rucula") || n.includes("espinaca") || n.includes("alface") || n.includes("verde")) return "🥬";
     if (n.includes("brocoli") || n.includes("brócolis") || n.includes("coliflor")) return "🥦";
     if (n.includes("choclo") || n.includes("maiz") || n.includes("milho")) return "🌽";
+    if (n.includes("arveja") || n.includes("arvejas") || n.includes("guisante") || n.includes("guisantes") || n.includes("ervilha")) return "🟢";
+    if (n.includes("zapallito") || n.includes("zapallitos") || n.includes("abobrinha") || n.includes("zuchini")) return "🥒";
     if (n.includes("palta") || n.includes("aguacate") || n.includes("abacate")) return "🥑";
     if (n.includes("pepino") || n.includes("zapallo") || n.includes("abóbora") || n.includes("calabaza")) return "🥒";
+
+    // Frutas específicas
+    if (n.includes("anana") || n.includes("ananá") || n.includes("piña") || n.includes("abacaxi")) return "🍍";
+    if (n.includes("mango")) return "🥭";
+    if (n.includes("banana") || n.includes("platano")) return "🍌";
+    if (n.includes("naranja") || n.includes("laranja")) return "🍊";
+    if (n.includes("uva") || n.includes("uvas")) return "🍇";
     if (n.includes("limon") || n.includes("limão")) return "🍋";
+    if (n.includes("manzana") || n.includes("maçã")) return "🍎";
 
     // Lácteos y Huevos
     if (n.includes("queso") || n.includes("mussarela") || n.includes("muzzarella") || n.includes("cheddar") || n.includes("parmesano")) return "🧀";
@@ -59,15 +71,17 @@ function obtenerIconoAlimento(nombre) {
     if (n.includes("huevo") || n.includes("ovo")) return "🥚";
     if (n.includes("yogur") || n.includes("iogurte")) return "🍧";
 
-    // Harinas, panadería y granos
+    // Harinas, panadería, levaduras y granos
     if (n.includes("arroz")) return "🍚";
     if (n.includes("harina") || n.includes("trigo") || n.includes("farinha")) return "🌾";
+    if (n.includes("levadura") || n.includes("fermento")) return "🦠";
     if (n.includes("pan") || n.includes("pão") || n.includes("focaccia") || n.includes("masa")) return "🍞";
     if (n.includes("fideo") || n.includes("pasta") || n.includes("macarron") || n.includes("espagueti") || n.includes("massa")) return "🍝";
     if (n.includes("avena") || n.includes("cereal") || n.includes("granola")) return "🥣";
 
-    // Almacén, condimentos, aceites y bebidas
+    // Almacén, condimentos, aceites, vinagres y bebidas
     if (n.includes("aceite") || n.includes("óleo") || n.includes("girasol") || n.includes("oliva")) return "🍾";
+    if (n.includes("vinagre") || n.includes("vinagre")) return "🍾";
     if (n.includes("azucar") || n.includes("açúcar") || n.includes("adoz") || n.includes("dulce")) return "🍬";
     if (n.includes("sal")) return "🧂";
     if (n.includes("pimienta") || n.includes("pimenta") || n.includes("comino") || n.includes("organo") || n.includes("oregano") || n.includes("condimento") || n.includes("especi") || n.includes("pimenton")) return "🌿";
