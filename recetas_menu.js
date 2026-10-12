@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -14,49 +14,143 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let cacheIngredientes = {};
+let cacheRecetasAdmin = [];
 
 const formReceta = document.getElementById("form-receta");
+const inputIdOculto = document.getElementById("receta-id-oculto");
 const inputNombre = document.getElementById("receta-nombre");
 const inputPorciones = document.getElementById("receta-porciones");
 const inputImagen = document.getElementById("receta-imagen");
 const contenedorIngredientes = document.getElementById("contenedor-ingredientes");
 const btnAgregarFila = document.getElementById("btn-agregar-fila");
+const btnGuardarReceta = document.getElementById("btn-guardar-receta");
+const btnCancelarEdicion = document.getElementById("btn-cancelar-edicion");
 const mensajeForm = document.getElementById("mensaje-form");
+const tituloFormReceta = document.getElementById("titulo-form-receta");
+const tablaRecetasAdmin = document.getElementById("tabla-recetas-admin");
 
 async function inicializarRecetasMenu() {
     try {
-        const querySnapshot = await getDocs(collection(db, "ingredientes"));
+        // 1. Cargar Insumos
+        const qIng = await getDocs(collection(db, "ingredientes"));
         cacheIngredientes = {};
-        
-        querySnapshot.forEach((docSnap) => {
+        qIng.forEach((docSnap) => {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // Limpiar contenedor antes de agregar la primera fila
-        contenedorIngredientes.innerHTML = "";
+        // 2. Cargar Recetas para la tabla de administración
+        await cargarRecetasAdmin();
 
         if (Object.keys(cacheIngredientes).length === 0) {
-            contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay insumos cargados en Firebase. Ve a "Carga de Insumos" primero.</p>';
+            contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay insumos cargados. Ve a "Carga de Insumos" primero.</p>';
             if (btnAgregarFila) btnAgregarFila.disabled = true;
         } else {
-            if (btnAgregarFila) btnAgregarFila.disabled = false;
-            agregarFilaIngrediente();
+            if (contenedorIngredientes.children.length === 0) {
+                agregarFilaIngrediente();
+            }
         }
 
     } catch (error) {
-        console.error("Error al cargar ingredientes:", error);
-        contenedorIngredientes.innerHTML = '<p class="text-xs text-red-600 p-3 bg-red-50 rounded-xl">Error al conectar con la base de datos de insumos.</p>';
+        console.error("Error al inicializar recetas:", error);
     }
 }
 
-// Agregar fila permitiendo alternar entre unidades (ej. kg -> gramos) de manera segura
-function agregarFilaIngrediente() {
+async function cargarRecetasAdmin() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "recetas"));
+        tablaRecetasAdmin.innerHTML = "";
+        cacheRecetasAdmin = [];
+
+        if (querySnapshot.empty) {
+            tablaRecetasAdmin.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No hay menús registrados todavía.</td></tr>`;
+            return;
+        }
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            cacheRecetasAdmin.push({ id, ...data });
+
+            // Formatear lista de ingredientes para mostrar resumen en la tabla
+            let resumenIngredientes = data.ingredientes.map(item => {
+                const ing = cacheIngredientes[item.idIngrediente];
+                const nombreIng = ing ? ing.nombre : "Insumo";
+                let cantidadMostrar = item.cantidad;
+                let unidadMostrar = ing ? ing.unidad : "";
+
+                if (ing && ing.unidad === "kg" && item.cantidad < 1) {
+                    cantidadMostrar = (item.cantidad * 1000).toFixed(0);
+                    unidadMostrar = "g";
+                } else if (ing && ing.unidad === "litro" && item.cantidad < 1) {
+                    cantidadMostrar = (item.cantidad * 1000).toFixed(0);
+                    unidadMostrar = "ml";
+                }
+
+                return `<span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs mr-1 mb-1">${nombreIng}: ${cantidadMostrar} ${unidadMostrar}</span>`;
+            }).join("");
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="py-3 px-3 font-medium text-slate-800">${data.nombre}</td>
+                <td class="py-3 px-3 text-slate-600">${data.porciones} porciones</td>
+                <td class="py-3 px-3 max-w-xs">${resumenIngredientes}</td>
+                <td class="py-3 px-3 text-right space-x-2 whitespace-nowrap">
+                    <button class="btn-editar-receta bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition cursor-pointer" 
+                        data-id="${id}">
+                        ✏️ Editar
+                    </button>
+                    <button class="btn-eliminar-receta bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 transition cursor-pointer" 
+                        data-id="${id}">
+                        🗑️ Eliminar
+                    </button>
+                </td>
+            `;
+            tablaRecetasAdmin.appendChild(tr);
+        });
+
+        // Eventos Editar
+        document.querySelectorAll(".btn-editar-receta").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const id = e.currentTarget.dataset.id;
+                prepararEdicionReceta(id);
+            });
+        });
+
+        // Eventos Eliminar
+        document.querySelectorAll(".btn-eliminar-receta").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const id = e.currentTarget.dataset.id;
+                eliminarReceta(id);
+            });
+        });
+
+    } catch (error) {
+        console.error("Error al cargar listado de recetas:", error);
+    }
+}
+
+function agregarFilaIngrediente(ingredienteSeleccionado = "", cantidadValor = "") {
     const div = document.createElement("div");
     div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 fila-ingrediente";
 
     let optionsHtml = '<option value="">-- Seleccione Insumo --</option>';
     for (const [id, data] of Object.entries(cacheIngredientes)) {
-        optionsHtml += `<option value="${id}" data-unidad="${data.unidad || 'kg'}">${data.nombre} (${data.unidad || 'kg'})</option>`;
+        const selected = (id === ingredienteSeleccionado) ? "selected" : "";
+        optionsHtml += `<option value="${id}" data-unidad="${data.unidad || 'kg'}" ${selected}>${data.nombre} (${data.unidad || 'kg'})</option>`;
+    }
+
+    // Calcular si se debe mostrar en gramos/ml o unidad principal según el valor almacenado
+    let valInput = cantidadValor;
+    let unidadInicialSeleccionada = "kg";
+
+    if (ingredienteSeleccionado && cacheIngredientes[ingredienteSeleccionado]) {
+        const unidadBase = cacheIngredientes[ingredienteSeleccionado].unidad;
+        if ((unidadBase === "kg" || unidadBase === "litro") && cantidadValor !== "" && cantidadValor < 1) {
+            valInput = (cantidadValor * 1000).toFixed(0);
+            unidadInicialSeleccionada = (unidadBase === "kg") ? "g" : "ml";
+        } else {
+            unidadInicialSeleccionada = unidadBase;
+        }
     }
 
     div.innerHTML = `
@@ -64,7 +158,7 @@ function agregarFilaIngrediente() {
             ${optionsHtml}
         </select>
         <div class="flex items-center gap-1.5 w-48">
-            <input type="number" step="any" min="0.001" placeholder="Cant." class="input-cantidad w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input type="number" step="any" min="0.001" value="${valInput}" placeholder="Cant." class="input-cantidad w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
             <select class="select-unidad-receta border border-slate-300 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">-</option>
             </select>
@@ -75,29 +169,37 @@ function agregarFilaIngrediente() {
     const selectIng = div.querySelector(".select-ingrediente");
     const selectUnidadReceta = div.querySelector(".select-unidad-receta");
 
-    selectIng.addEventListener("change", (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        const unidadBase = selectedOption.dataset.unidad || "";
-        
+    function actualizarOpcionesUnidad(unidadBase, selecVal = "") {
         selectUnidadReceta.innerHTML = "";
-
         if (unidadBase === "kg") {
             selectUnidadReceta.innerHTML = `
-                <option value="kg">kg</option>
-                <option value="g" selected>g (gramos)</option>
+                <option value="kg" ${selecVal === 'kg' ? 'selected' : ''}>kg</option>
+                <option value="g" ${selecVal !== 'kg' ? 'selected' : ''}>g (gramos)</option>
             `;
         } else if (unidadBase === "litro") {
             selectUnidadReceta.innerHTML = `
-                <option value="litro">litros</option>
-                <option value="ml" selected>ml (mililitros)</option>
+                <option value="litro" ${selecVal === 'litro' ? 'selected' : ''}>litros</option>
+                <option value="ml" ${selecVal !== 'litro' ? 'selected' : ''}>ml (mililitros)</option>
             `;
         } else {
             selectUnidadReceta.innerHTML = `<option value="${unidadBase}">${unidadBase}</option>`;
         }
+    }
+
+    selectIng.addEventListener("change", (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const unidadBase = selectedOption.dataset.unidad || "";
+        actualizarOpcionesUnidad(unidadBase);
     });
 
+    if (ingredienteSeleccionado) {
+        const unidadBase = cacheIngredientes[ingredienteSeleccionado]?.unidad || "kg";
+        actualizarOpcionesUnidad(unidadBase, unidadInicialSeleccionada);
+    } else {
+        selectUnidadReceta.innerHTML = `<option value="">-</option>`;
+    }
+
     div.querySelector(".btn-eliminar-fila").addEventListener("click", () => {
-        // Permitir eliminar solo si hay más de una fila, o limpiar si es la única
         div.remove();
         if (contenedorIngredientes.children.length === 0) {
             agregarFilaIngrediente();
@@ -105,6 +207,47 @@ function agregarFilaIngrediente() {
     });
 
     contenedorIngredientes.appendChild(div);
+}
+
+function prepararEdicionReceta(id) {
+    const receta = cacheRecetasAdmin.find(r => r.id === id);
+    if (!receta) return;
+
+    inputIdOculto.value = receta.id;
+    inputNombre.value = receta.nombre;
+    inputPorciones.value = receta.porciones;
+    
+    contenedorIngredientes.innerHTML = "";
+    receta.ingredientes.forEach(item => {
+        agregarFilaIngrediente(item.idIngrediente, item.cantidad);
+    });
+
+    tituloFormReceta.innerHTML = `<span>✏️</span> Corregir / Editar Menú Tipo`;
+    btnGuardarReceta.textContent = "Actualizar Receta";
+    btnCancelarEdicion.classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelarEdicionReceta() {
+    formReceta.reset();
+    inputIdOculto.value = "";
+    contenedorIngredientes.innerHTML = "";
+    agregarFilaIngrediente();
+    tituloFormReceta.innerHTML = `<span>🍽️</span> Alta de Menú Tipo / Recetas`;
+    btnGuardarReceta.textContent = "Grabar Receta en Base";
+    btnCancelarEdicion.classList.add("hidden");
+}
+
+async function eliminarReceta(id) {
+    if (confirm("¿Estás seguro de que deseas eliminar este menú de la base de datos?")) {
+        try {
+            await deleteDoc(doc(db, "recetas", id));
+            await cargarRecetasAdmin();
+        } catch (error) {
+            console.error("Error al eliminar receta:", error);
+            alert("No se pudo eliminar el menú.");
+        }
+    }
 }
 
 function convertirImagenABase64(file) {
@@ -120,6 +263,7 @@ async function guardarReceta(e) {
     e.preventDefault();
     const nombre = inputNombre.value.trim();
     const porciones = parseInt(inputPorciones.value) || 1;
+    const idExistente = inputIdOculto.value;
     
     const filas = contenedorIngredientes.querySelectorAll(".fila-ingrediente");
     let ingredientesReceta = [];
@@ -134,7 +278,6 @@ async function guardarReceta(e) {
             let unidadElegida = selectUnidad ? selectUnidad.value : "";
 
             let cantidadFinal = cantidadIngresada;
-            // Si se ingresó en gramos o mililitros, normalizar a kg o litros para la base de datos
             if (unidadElegida === "g" || unidadElegida === "ml") {
                 cantidadFinal = cantidadIngresada / 1000;
             }
@@ -160,7 +303,7 @@ async function guardarReceta(e) {
         }
     }
 
-    const idReceta = nombre.toLowerCase()
+    const idReceta = idExistente ? idExistente : nombre.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]/g, "_");
 
@@ -181,10 +324,9 @@ async function guardarReceta(e) {
 
         await setDoc(doc(db, "recetas", idReceta), datosReceta, { merge: true });
 
-        mensajeForm.textContent = "¡Menú / Receta guardada con éxito!";
-        formReceta.reset();
-        contenedorIngredientes.innerHTML = "";
-        agregarFilaIngrediente();
+        mensajeForm.textContent = idExistente ? "¡Menú actualizado con éxito!" : "¡Menú guardado con éxito!";
+        cancelarEdicionReceta();
+        await cargarRecetasAdmin();
 
         setTimeout(() => {
             mensajeForm.classList.add("hidden");
@@ -203,6 +345,10 @@ if (btnAgregarFila) {
         e.preventDefault();
         agregarFilaIngrediente();
     });
+}
+
+if (btnCancelarEdicion) {
+    btnCancelarEdicion.addEventListener("click", cancelarEdicionReceta);
 }
 
 if (formReceta) formReceta.addEventListener("submit", guardarReceta);
