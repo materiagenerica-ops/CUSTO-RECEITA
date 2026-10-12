@@ -86,7 +86,6 @@ async function cargarRecetasAdmin() {
                 return `<span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs mr-1 mb-1">${nombreIng}: ${cantidadMostrar} ${unidadMostrar}</span>`;
             }).join("");
 
-            // Miniatura de imagen o icono por defecto
             let htmlImagen = `<div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-lg border border-slate-200">🍽️</div>`;
             if (data.imagen) {
                 htmlImagen = `<img src="${data.imagen}" alt="${data.nombre}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-xs">`;
@@ -305,7 +304,6 @@ async function guardarReceta(e) {
             console.error("Error al procesar imagen:", err);
         }
     } else if (recetaExistente && recetaExistente.imagen) {
-        // Mantener la imagen anterior si no se seleccionó una nueva al editar
         imagenBase64 = recetaExistente.imagen;
     }
 
