@@ -24,7 +24,6 @@ const mensajeForm = document.getElementById("mensaje-form");
 const tablaIngredientesAdmin = document.getElementById("tabla-ingredientes-admin");
 const tituloForm = document.getElementById("titulo-form");
 
-// Cargar listado en la tabla de administración
 async function cargarInsumosAdmin() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
@@ -43,7 +42,7 @@ async function cargarInsumosAdmin() {
             tr.innerHTML = `
                 <td class="py-3 px-3 font-medium text-slate-800">${data.nombre}</td>
                 <td class="py-3 px-3 text-slate-600">${data.unidad}</td>
-                <td class="py-3 px-3 text-slate-600 font-semibold">R$ ${data.precioUnitario.toFixed(2)}</td>
+                <td class="py-3 px-3 text-slate-600 font-semibold">R$ ${(Number(String(data.precioUnitario).replace(',', '.')) || 0).toFixed(2)}</td>
                 <td class="py-3 px-3 text-right space-x-2">
                     <button class="btn-editar bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition cursor-pointer" 
                         data-id="${id}" data-nombre="${data.nombre}" data-unidad="${data.unidad}" data-precio="${data.precioUnitario}">
@@ -58,7 +57,6 @@ async function cargarInsumosAdmin() {
             tablaIngredientesAdmin.appendChild(tr);
         });
 
-        // Activar eventos de los botones de la tabla
         document.querySelectorAll(".btn-editar").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const dataset = e.currentTarget.dataset;
@@ -78,12 +76,11 @@ async function cargarInsumosAdmin() {
     }
 }
 
-// Guardar o Actualizar Insumo en Firebase
 async function guardarInsumo(e) {
     e.preventDefault();
     const nombre = inputNombre.value.trim();
     const unidad = inputUnidad.value;
-    const precioUnitario = parseFloat(inputPrecio.value);
+    const precioUnitario = Number(String(inputPrecio.value).replace(',', '.')) || 0;
     const idExistente = inputIdOculto.value;
 
     const idIngrediente = idExistente ? idExistente : nombre.toLowerCase()
