@@ -23,7 +23,7 @@
 
         <!-- Barra de Menú Horizontal -->
         <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-3">
-            <div class="max-w-5xl mx-auto flex items-center space-x-3 overflow-x-auto">
+            <div class="max-w-6xl mx-auto flex items-center space-x-3 overflow-x-auto">
                 <a href="index.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
                     <span>🏠</span> <span>Calculadora</span>
                 </a>
@@ -36,6 +36,9 @@
                 <a href="listados.html" class="flex items-center space-x-2 text-xs font-semibold text-white bg-emerald-600 px-4 py-2.5 rounded-xl shadow-sm transition">
                     <span>📋</span> <span>Listado de Alimentos</span>
                 </a>
+                <a href="cronograma_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                    <span>📅</span> <span>Cronograma Menú</span>
+                </a>
             </div>
         </nav>
     </div>
@@ -43,7 +46,6 @@
     <!-- Contenido Principal -->
     <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
         
-        <!-- Panel de Selección de Menús para el Listado -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 print:shadow-none print:border-none print:p-0">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
@@ -57,9 +59,8 @@
                 </button>
             </div>
 
-            <!-- Contenedor dinámico de selección de recetas -->
             <div id="selector-menus-container" class="space-y-3 print:hidden mb-6">
-                <!-- Se inyectan filas de selección de menús -->
+                <!-- Dinámico -->
             </div>
 
             <div class="print:hidden flex items-center justify-between gap-4 pt-2 border-t border-slate-100">
@@ -72,7 +73,6 @@
             </div>
         </section>
 
-        <!-- Resultados del Consolidado de Compras -->
         <section id="seccion-resultado-consolidado" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hidden print:block">
             <div class="border-b border-slate-200 pb-4 mb-4 flex justify-between items-end">
                 <div>
