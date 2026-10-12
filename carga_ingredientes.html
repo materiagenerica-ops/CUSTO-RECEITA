@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custo Receita - Carga de Ingredientes</title>
+    <title>Custo Receita - Carga de Insumos</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
@@ -41,14 +41,17 @@
     </div>
 
     <!-- Contenido Principal -->
-    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow">
+    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
+        
+        <!-- Formulario de Alta / Edición -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
+            <h2 id="titulo-form" class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
                 <span>📦</span> Registro y Actualización de Insumos
             </h2>
-            <p class="text-xs text-slate-500 mb-6">Los precios ingresados se actualizarán automáticamente en la base de datos de Firebase (Comercios de Torres, RS).</p>
+            <p class="text-xs text-slate-500 mb-6">Agrega nuevos insumos o edita los existentes para mantener los precios al día (Comercios de Torres, RS).</p>
             
             <form id="form-ingrediente" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <input type="hidden" id="ing-id-oculto">
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Nombre del Insumo</label>
                     <input type="text" id="ing-nombre" required placeholder="Ej. Pechuga de Pollo" 
@@ -68,13 +71,39 @@
                     <input type="number" step="0.01" id="ing-precio" required placeholder="0.00" 
                         class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
-                <div class="flex items-end">
-                    <button type="submit" id="btn-guardar-ing" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition duration-200 shadow-sm cursor-pointer">
-                        Grabar en Base
+                <div class="flex items-end gap-2">
+                    <button type="submit" id="btn-guardar-ing" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-3 rounded-xl text-sm transition duration-200 shadow-sm cursor-pointer">
+                        Grabar
+                    </button>
+                    <button type="button" id="btn-cancelar-edicion" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2.5 px-3 rounded-xl text-sm transition cursor-pointer">
+                        Cancelar
                     </button>
                 </div>
             </form>
             <p id="mensaje-form" class="text-xs mt-3 text-emerald-600 font-medium hidden"></p>
+        </section>
+
+        <!-- Listado de Insumos Registrados con opciones de Corrección -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span>📋</span> Insumos Registrados (Para Corregir o Eliminar)
+            </h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-500 text-xs">
+                            <th class="py-2 px-3">Insumo</th>
+                            <th class="py-2 px-3">Unidad</th>
+                            <th class="py-2 px-3">Precio Actual (R$)</th>
+                            <th class="py-2 px-3 text-right">Acciones de Corrección</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-ingredientes-admin" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dinámico -->
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
 
