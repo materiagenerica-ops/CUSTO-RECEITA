@@ -34,7 +34,7 @@ async function inicializarRecetasMenu() {
 
         if (Object.keys(cacheIngredientes).length === 0) {
             contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600">No hay insumos cargados. Ve a "Carga de Insumos" primero.</p>';
-            btnAgregarFila.disabled = true;
+            if (btnAgregarFila) btnAgregarFila.disabled = true;
         } else {
             agregarFilaIngrediente();
         }
@@ -47,7 +47,7 @@ async function inicializarRecetasMenu() {
 // Agregar fila permitiendo alternar entre unidades (ej. kg -> gramos)
 function agregarFilaIngrediente() {
     const div = document.createElement("div");
-    div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200";
+    div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 fila-ingrediente";
 
     let optionsHtml = '<option value="">-- Seleccione Insumo --</option>';
     for (const [id, data] of Object.entries(cacheIngredientes)) {
@@ -112,7 +112,7 @@ async function guardarReceta(e) {
     const nombre = inputNombre.value.trim();
     const porciones = parseInt(inputPorciones.value) || 1;
     
-    const filas = contenedorIngredientes.querySelectorAll("div.flex");
+    const filas = contenedorIngredientes.querySelectorAll(".fila-ingrediente");
     let ingredientesReceta = [];
 
     filas.forEach(fila => {
@@ -120,11 +120,10 @@ async function guardarReceta(e) {
         const cantidadInput = fila.querySelector(".input-cantidad");
         const selectUnidad = fila.querySelector(".select-unidad-receta");
 
-        if (select.value && cantidadInput.value) {
+        if (select && select.value && cantidadInput && cantidadInput.value) {
             let cantidadIngresada = parseFloat(cantidadInput.value);
-            let unidadElegida = selectUnidad.value;
+            let unidadElegida = selectUnidad ? selectUnidad.value : "";
 
-            // Normalizar a unidad base (kg o litro) si se ingresó en gramos o mililitros
             let cantidadFinal = cantidadIngresada;
             if (unidadElegida === "g" || unidadElegida === "ml") {
                 cantidadFinal = cantidadIngresada / 1000;
@@ -132,7 +131,7 @@ async function guardarReceta(e) {
 
             ingredientesReceta.push({
                 idIngrediente: select.value,
-                cantidad: cantidadFinal // Se almacena normalizado en la unidad principal del insumo
+                cantidad: cantidadFinal
             });
         }
     });
@@ -143,7 +142,7 @@ async function guardarReceta(e) {
     }
 
     let imagenBase64 = "";
-    if (inputImagen.files && inputImagen.files[0]) {
+    if (inputImagen && inputImagen.files && inputImagen.files[0]) {
         try {
             imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
         } catch (err) {
@@ -189,6 +188,6 @@ async function guardarReceta(e) {
     }
 }
 
-btnAgregarFila.addEventListener("click", agregarFilaIngrediente);
-formReceta.addEventListener("submit", guardarReceta);
+if (btnAgregarFila) btnAgregarFila.addEventListener("click", agregarFilaIngrediente);
+if (formReceta) formReceta.addEventListener("submit", guardarReceta);
 window.addEventListener("DOMContentLoaded", inicializarRecetasMenu);
