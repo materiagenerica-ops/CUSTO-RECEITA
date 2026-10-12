@@ -25,14 +25,12 @@ const consolidadoCostoTotal = document.getElementById("consolidado-costo-total")
 
 async function inicializarListados() {
     try {
-        // 1. Cargar Insumos
         const qIng = await getDocs(collection(db, "ingredientes"));
         cacheIngredientes = {};
         qIng.forEach(docSnap => {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Cargar Recetas
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         qRec.forEach(docSnap => {
@@ -46,7 +44,6 @@ async function inicializarListados() {
             return;
         }
 
-        // Agregar fila inicial
         agregarFilaSelectorMenu();
 
     } catch (error) {
@@ -84,7 +81,6 @@ function agregarFilaSelectorMenu() {
     selectorMenusContainer.appendChild(div);
 }
 
-// Cálculo matemático consolidado exacto y blindado
 function generarListadoConsolidado() {
     const filas = selectorMenusContainer.querySelectorAll(".fila-selector-menu");
     let acumuladorInsumos = {};
@@ -107,8 +103,6 @@ function generarListadoConsolidado() {
                 receta.ingredientes.forEach(item => {
                     const ingId = item.idIngrediente;
                     const cantidadBase = Number(String(item.cantidad).replace(',', '.')) || 0;
-                    
-                    // Cantidad proporcional para los comensales solicitados de este plato
                     const cantidadRequerida = (cantidadBase / porcionesBase) * comensalesDeseados;
 
                     if (!acumuladorInsumos[ingId]) {
@@ -127,7 +121,6 @@ function generarListadoConsolidado() {
 
     tablaConsolidadoCuerpo.innerHTML = "";
 
-    // Procesar y sumar costos de cada insumo consolidado
     for (const [ingId, cantidadTotal] of Object.entries(acumuladorInsumos)) {
         const ingInfo = cacheIngredientes[ingId];
         if (ingInfo) {
@@ -135,7 +128,6 @@ function generarListadoConsolidado() {
             let costoParcial = 0;
             let textoCantidadFormateada = "";
 
-            // Cálculo estricto según la unidad en la que se compró el insumo
             if (ingInfo.unidad === "kg") {
                 costoParcial = cantidadTotal * precioUnitario;
                 if (cantidadTotal < 1) {
@@ -154,7 +146,6 @@ function generarListadoConsolidado() {
                 costoParcial = (cantidadTotal / 1000) * precioUnitario;
                 textoCantidadFormateada = `${cantidadTotal.toFixed(0)} ${ingInfo.unidad}`;
             } else {
-                // Unidades discretas (piezas, docenas, atados)
                 costoParcial = cantidadTotal * precioUnitario;
                 textoCantidadFormateada = `${cantidadTotal.toFixed(1)} ${ingInfo.unidad}`;
             }
