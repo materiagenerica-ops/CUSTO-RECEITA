@@ -28,14 +28,14 @@ const tituloForm = document.getElementById("titulo-form");
 function obtenerIconoAlimento(nombre) {
     const n = nombre.toLowerCase().trim();
 
-    // Carnes, embutidos, aves y pescados
+    // Carnes, embutidos, aves y pescados / conservas
     if (n.includes("pollo") || n.includes("frango") || n.includes("pechuga") || n.includes("suprema")) return "🍗";
     if (n.includes("carne") || n.includes("bovino") || n.includes("asado") || n.includes("costilla") || n.includes("alcatra") || n.includes("patinho") || n.includes("molida") || n.includes("moída")) return "🥩";
     if (n.includes("cerdo") || n.includes("puerco") || n.includes("suino") || n.includes("bondiola") || n.includes("costelinha")) return "🥓";
     if (n.includes("mortadela") || n.includes("mortadella")) return "🥓";
     if (n.includes("jamon") || n.includes("presunto") || n.includes("paleta")) return "🥪";
     if (n.includes("salchicha") || n.includes("salsicha") || n.includes("chorizo") || n.includes("linguiça")) return "🌭";
-    if (n.includes("atun") || n.includes("atúm")) return "🐟";
+    if (n.includes("atun") || n.includes("atúm")) return "🥫"; // Lata de atún
     if (n.includes("pescado") || n.includes("peixe") || n.includes("salmón") || n.includes("merluza")) return "🐟";
 
     // Verduras y Hortalizas específicas
@@ -79,10 +79,10 @@ function obtenerIconoAlimento(nombre) {
     if (n.includes("fideo") || n.includes("pasta") || n.includes("macarron") || n.includes("espagueti") || n.includes("massa")) return "🍝";
     if (n.includes("avena") || n.includes("cereal") || n.includes("granola")) return "🥣";
 
-    // Almacén, condimentos, aceites, vinagres y bebidas
+    // Almacén, condimentos, aceites, vinagres, azúcares y bebidas
     if (n.includes("aceite") || n.includes("óleo") || n.includes("girasol") || n.includes("oliva")) return "🍾";
-    if (n.includes("vinagre") || n.includes("vinagre")) return "🍾";
-    if (n.includes("azucar") || n.includes("açúcar") || n.includes("adoz") || n.includes("dulce")) return "🍬";
+    if (n.includes("vinagre")) return "🍾";
+    if (n.includes("azucar") || n.includes("açúcar") || n.includes("dulce")) return "🛍️"; // Bolsa de azúcar
     if (n.includes("sal")) return "🧂";
     if (n.includes("pimienta") || n.includes("pimenta") || n.includes("comino") || n.includes("organo") || n.includes("oregano") || n.includes("condimento") || n.includes("especi") || n.includes("pimenton")) return "🌿";
     if (n.includes("vino") || n.includes("vinho")) return "🍷";
