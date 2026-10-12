@@ -29,7 +29,6 @@ const nombresMeses = [
 
 async function inicializarCronograma() {
     try {
-        // 1. Cargar recetas para obtener sus fotos asociadas por nombre
         const qRecetas = await getDocs(collection(db, "recetas"));
         cacheRecetasFotos = {};
         qRecetas.forEach(docSnap => {
@@ -39,7 +38,6 @@ async function inicializarCronograma() {
             }
         });
 
-        // 2. Cargar registros históricos (que tienen fecha y plato asignado)
         const qHistorico = await getDocs(collection(db, "produccion_historico"));
         cacheProduccionHistorico = [];
         qHistorico.forEach(docSnap => {
@@ -60,30 +58,24 @@ function renderizarCalendario() {
     labelMesAnio.textContent = `${nombresMeses[mes]} ${anio}`;
     calendarioGrid.innerHTML = "";
 
-    // Primer día del mes y total de días
     const primerDiaSemana = new Date(anio, mes, 1).getDay();
     const ultimoDiaMes = new Date(anio, mes + 1, 0).getDate();
 
-    // Rellenar espacios vacíos previos al primer día
     for (let i = 0; i < primerDiaSemana; i++) {
         const casillaVacia = document.createElement("div");
         casillaVacia.className = "bg-slate-50/50 rounded-2xl min-h-28 border border-slate-100 opacity-40";
         calendarioGrid.appendChild(casillaVacia);
     }
 
-    // Rellenar los días del mes
     for (let dia = 1; dia <= ultimoDiaMes; dia++) {
         const mesStr = String(mes + 1).padStart(2, '0');
         const diaStr = String(dia).padStart(2, '0');
-        const fechaIso = `${anio}-${mesStr}-${diaStr}`; // Formato YYYY-MM-DD igual al guardado en histórico
+        const fechaIso = `${anio}-${mesStr}-${diaStr}`;
 
         const casilla = document.createElement("div");
         casilla.className = "bg-white rounded-2xl p-2 border border-slate-200 min-h-32 flex flex-col justify-between shadow-xs";
 
-        // Número de día
         const numeroDiaHtml = `<div class="text-xs font-bold text-slate-500 mb-1">${dia}</div>`;
-        
-        // Buscar platos planificados para esta fecha exacta
         const platosDelDia = cacheProduccionHistorico.filter(item => item.fecha === fechaIso);
 
         let contenidoPlatosHtml = `<div class="space-y-1.5 overflow-y-auto max-h-24">`;
@@ -118,7 +110,6 @@ function renderizarCalendario() {
     }
 }
 
-// Navegación de meses
 btnMesAnterior.addEventListener("click", () => {
     fechaActualVisualizacion.setMonth(fechaActualVisualizacion.getMonth() - 1);
     renderizarCalendario();
