@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -13,241 +13,197 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.intentarLogin = function(e) {
-    e.preventDefault();
-    const usuario = document.getElementById("login-usuario").value.trim();
-    const password = document.getElementById("login-password").value.trim();
-    const loginError = document.getElementById("login-error");
-
-    if (usuario === "DRPEREYRA" && password === "235689") {
-        sessionStorage.setItem("auth_custo", "true");
-        document.getElementById("login-container").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        inicializarApp();
-    } else {
-        loginError.classList.remove("hidden");
-    }
-};
-
-function verificarSesion() {
-    if (sessionStorage.getItem("auth_custo") === "true") {
-        document.getElementById("login-container").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        inicializarApp();
-    }
-}
-
-const btnSalir = document.getElementById("btn-salir");
-if (btnSalir) {
-    btnSalir.addEventListener("click", () => {
-        sessionStorage.removeItem("auth_custo");
-        window.location.reload();
-    });
-}
-
 let cacheIngredientes = {};
-let cacheRecetas = [];
-let calculoActualMemoria = null;
 
-const selectReceta = document.getElementById("select-receta");
-const inputComensales = document.getElementById("input-comensales");
-const btnCalcular = document.getElementById("btn-calcular");
-const resultadoContainer = document.getElementById("resultado-container");
-const tablaCuerpo = document.getElementById("tabla-ingredientes-cuerpo");
-const recetaNombre = document.getElementById("receta-nombre");
-const labelCantComensales = document.getElementById("label-cant-comensales");
-const txtLoteComensales = document.getElementById("txt-lote-comensales");
-const costoUnitarioSpan = document.getElementById("costo-unitario");
-const costoTotalSpan = document.getElementById("costo-total");
-const mensajeEstado = document.getElementById("mensaje-estado");
-const imagenRecetaContainer = document.getElementById("imagen-receta-container");
-const recetaFoto = document.getElementById("receta-foto");
+const formReceta = document.getElementById("form-receta");
+const inputNombre = document.getElementById("receta-nombre");
+const inputPorciones = document.getElementById("receta-porciones");
+const inputImagen = document.getElementById("receta-imagen");
+const contenedorIngredientes = document.getElementById("contenedor-ingredientes");
+const btnAgregarFila = document.getElementById("btn-agregar-fila");
+const mensajeForm = document.getElementById("mensaje-form");
 
-const inputFecha = document.getElementById("input-fecha");
-const btnRegistrar = document.getElementById("btn-registrar");
-const mensajeRegistro = document.getElementById("mensaje-registro");
-const tablaHistoricoCuerpo = document.getElementById("tabla-historico-cuerpo");
-const totalHistoricoSpan = document.getElementById("total-historico");
-
-function inicializarFechaHoy() {
-    const hoy = new Date().toISOString().split('T')[0];
-    if (inputFecha) inputFecha.value = hoy;
-}
-
-async function inicializarApp() {
+async function inicializarRecetasMenu() {
     try {
-        inicializarFechaHoy();
-        if (mensajeEstado) mensajeEstado.textContent = "Sincronizando con base de datos...";
-        
+        const querySnapshot = await getDocs(collection(db, "ingredientes"));
         cacheIngredientes = {};
-        const qIng = await getDocs(collection(db, "ingredientes"));
-        qIng.forEach(docSnap => {
+        
+        querySnapshot.forEach((docSnap) => {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        const qRec = await getDocs(collection(db, "recetas"));
-        cacheRecetas = [];
-        if (selectReceta) {
-            selectReceta.innerHTML = '<option value="">-- Seleccione un plato del menú tipo --</option>';
-            qRec.forEach(docSnap => {
-                const data = { id: docSnap.id, ...docSnap.data() };
-                cacheRecetas.push(data);
-                const opt = document.createElement("option");
-                opt.value = data.id;
-                opt.textContent = data.nombre;
-                selectReceta.appendChild(opt);
-            });
+        // Limpiar contenedor antes de agregar la primera fila
+        contenedorIngredientes.innerHTML = "";
+
+        if (Object.keys(cacheIngredientes).length === 0) {
+            contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay insumos cargados en Firebase. Ve a "Carga de Insumos" primero.</p>';
+            if (btnAgregarFila) btnAgregarFila.disabled = true;
+        } else {
+            if (btnAgregarFila) btnAgregarFila.disabled = false;
+            agregarFilaIngrediente();
         }
 
-        await cargarHistoricoEstadisticas();
-        if (mensajeEstado) mensajeEstado.textContent = "";
     } catch (error) {
-        console.error("Error al inicializar:", error);
-        if (mensajeEstado) mensajeEstado.textContent = "Error al conectar con la base de datos.";
+        console.error("Error al cargar ingredientes:", error);
+        contenedorIngredientes.innerHTML = '<p class="text-xs text-red-600 p-3 bg-red-50 rounded-xl">Error al conectar con la base de datos de insumos.</p>';
     }
 }
 
-// Función de cálculo corregida y blindada contra comas/puntos decimales
-function calcularCostoReceta() {
-    const recetaId = selectReceta.value;
-    const comensalesDeseados = parseInt(inputComensales.value) || 1;
+// Agregar fila permitiendo alternar entre unidades (ej. kg -> gramos) de manera segura
+function agregarFilaIngrediente() {
+    const div = document.createElement("div");
+    div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 fila-ingrediente";
 
-    if (!recetaId) {
-        alert("Por favor, seleccione un plato del menú.");
-        return;
+    let optionsHtml = '<option value="">-- Seleccione Insumo --</option>';
+    for (const [id, data] of Object.entries(cacheIngredientes)) {
+        optionsHtml += `<option value="${id}" data-unidad="${data.unidad || 'kg'}">${data.nombre} (${data.unidad || 'kg'})</option>`;
     }
 
-    const receta = cacheRecetas.find(r => r.id === recetaId);
-    if (!receta) return;
+    div.innerHTML = `
+        <select class="select-ingrediente flex-grow border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            ${optionsHtml}
+        </select>
+        <div class="flex items-center gap-1.5 w-48">
+            <input type="number" step="any" min="0.001" placeholder="Cant." class="input-cantidad w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <select class="select-unidad-receta border border-slate-300 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">-</option>
+            </select>
+        </div>
+        <button type="button" class="btn-eliminar-fila text-slate-400 hover:text-red-600 text-sm px-2 py-1 font-bold cursor-pointer">✕</button>
+    `;
 
-    recetaNombre.textContent = receta.nombre;
-    labelCantComensales.textContent = comensalesDeseados;
-    txtLoteComensales.textContent = comensalesDeseados;
-    tablaCuerpo.innerHTML = "";
+    const selectIng = div.querySelector(".select-ingrediente");
+    const selectUnidadReceta = div.querySelector(".select-unidad-receta");
 
-    if (receta.imagen) {
-        recetaFoto.src = receta.imagen;
-        imagenRecetaContainer.classList.remove("hidden");
-    } else {
-        imagenRecetaContainer.classList.add("hidden");
-    }
+    selectIng.addEventListener("change", (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const unidadBase = selectedOption.dataset.unidad || "";
+        
+        selectUnidadReceta.innerHTML = "";
 
-    const porcionesBaseReceta = parseFloat(receta.porciones) || 1;
-    let costoTotalLote = 0;
-
-    receta.ingredientes.forEach(item => {
-        const ingInfo = cacheIngredientes[item.idIngrediente];
-        if (ingInfo) {
-            // Asegurar lectura numérica robusta
-            const cantidadBaseReceta = parseFloat(item.cantidad) || 0;
-            const precioUnitario = parseFloat(ingInfo.precioUnitario) || 0;
-            
-            // Cantidad proporcional al lote de comensales deseados
-            let cantidadParaLote = (cantidadBaseReceta / porcionesBaseReceta) * comensalesDeseados;
-            
-            let costoParcial = 0;
-            let unidadMostrar = ingInfo.unidad;
-
-            // Lógica de cálculo estricta según unidad
-            if (ingInfo.unidad === "kg" || ingInfo.unidad === "litro") {
-                // Si la cantidad guardada es en kg o litros, costo = cantidad * precio por unidad
-                costoParcial = cantidadParaLote * precioUnitario;
-            } else if (ingInfo.unidad === "g" || ingInfo.unidad === "ml") {
-                costoParcial = (cantidadParaLote / 1000) * precioUnitario;
-            } else {
-                // Unidades discretas (piezas, docenas, atados)
-                costoParcial = cantidadParaLote * precioUnitario;
-            }
-
-            costoTotalLote += costoParcial;
-
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td class="py-3 px-3 font-medium text-slate-800">${ingInfo.nombre}</td>
-                <td class="py-3 px-3 text-slate-600">${cantidadParaLote.toFixed(2)} ${unidadMostrar}</td>
-                <td class="py-3 px-3 text-slate-600">R$ ${precioUnitario.toFixed(2)} / ${unidadMostrar}</td>
-                <td class="py-3 px-3 text-right font-semibold text-slate-900">R$ ${costoParcial.toFixed(2)}</td>
+        if (unidadBase === "kg") {
+            selectUnidadReceta.innerHTML = `
+                <option value="kg">kg</option>
+                <option value="g" selected>g (gramos)</option>
             `;
-            tablaCuerpo.appendChild(tr);
+        } else if (unidadBase === "litro") {
+            selectUnidadReceta.innerHTML = `
+                <option value="litro">litros</option>
+                <option value="ml" selected>ml (mililitros)</option>
+            `;
+        } else {
+            selectUnidadReceta.innerHTML = `<option value="${unidadBase}">${unidadBase}</option>`;
         }
     });
 
-    const costoPorcionIndividual = costoTotalLote / comensalesDeseados;
+    div.querySelector(".btn-eliminar-fila").addEventListener("click", () => {
+        // Permitir eliminar solo si hay más de una fila, o limpiar si es la única
+        div.remove();
+        if (contenedorIngredientes.children.length === 0) {
+            agregarFilaIngrediente();
+        }
+    });
 
-    costoUnitarioSpan.textContent = `R$ ${costoPorcionIndividual.toFixed(2)}`;
-    costoTotalSpan.textContent = `R$ ${costoTotalLote.toFixed(2)}`;
-    resultadoContainer.classList.remove("hidden");
-
-    calculoActualMemoria = {
-        fecha: inputFecha.value,
-        nombrePlato: receta.nombre,
-        comensales: comensalesDeseados,
-        costoTotal: costoTotalLote
-    };
+    contenedorIngredientes.appendChild(div);
 }
 
-async function registrarEstadistica() {
-    if (!calculoActualMemoria) {
-        alert("Primero debes calcular el costo de un plato.");
+function convertirImagenABase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+async function guardarReceta(e) {
+    e.preventDefault();
+    const nombre = inputNombre.value.trim();
+    const porciones = parseInt(inputPorciones.value) || 1;
+    
+    const filas = contenedorIngredientes.querySelectorAll(".fila-ingrediente");
+    let ingredientesReceta = [];
+
+    filas.forEach(fila => {
+        const select = fila.querySelector(".select-ingrediente");
+        const cantidadInput = fila.querySelector(".input-cantidad");
+        const selectUnidad = fila.querySelector(".select-unidad-receta");
+
+        if (select && select.value && cantidadInput && cantidadInput.value) {
+            let cantidadIngresada = Number(String(cantidadInput.value).replace(',', '.')) || 0;
+            let unidadElegida = selectUnidad ? selectUnidad.value : "";
+
+            let cantidadFinal = cantidadIngresada;
+            // Si se ingresó en gramos o mililitros, normalizar a kg o litros para la base de datos
+            if (unidadElegida === "g" || unidadElegida === "ml") {
+                cantidadFinal = cantidadIngresada / 1000;
+            }
+
+            ingredientesReceta.push({
+                idIngrediente: select.value,
+                cantidad: cantidadFinal
+            });
+        }
+    });
+
+    if (ingredientesReceta.length === 0) {
+        alert("Debes agregar al menos un ingrediente válido a la receta.");
         return;
     }
 
-    calculoActualMemoria.fecha = inputFecha.value;
+    let imagenBase64 = "";
+    if (inputImagen && inputImagen.files && inputImagen.files[0]) {
+        try {
+            imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
+        } catch (err) {
+            console.error("Error al procesar imagen:", err);
+        }
+    }
+
+    const idReceta = nombre.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "_");
 
     try {
-        mensajeRegistro.textContent = "Guardando en estadísticas...";
-        mensajeRegistro.classList.remove("hidden", "text-red-600");
-        mensajeRegistro.classList.add("text-emerald-600");
+        mensajeForm.textContent = "Guardando receta en Firebase...";
+        mensajeForm.classList.remove("hidden", "text-red-600");
+        mensajeForm.classList.add("text-emerald-600");
 
-        await addDoc(collection(db, "produccion_historico"), calculoActualMemoria);
+        const datosReceta = {
+            nombre,
+            porciones,
+            ingredientes: ingredientesReceta
+        };
 
-        mensajeRegistro.textContent = "¡Registro guardado en estadísticas con éxito!";
-        await cargarHistoricoEstadisticas();
+        if (imagenBase64) {
+            datosReceta.imagen = imagenBase64;
+        }
+
+        await setDoc(doc(db, "recetas", idReceta), datosReceta, { merge: true });
+
+        mensajeForm.textContent = "¡Menú / Receta guardada con éxito!";
+        formReceta.reset();
+        contenedorIngredientes.innerHTML = "";
+        agregarFilaIngrediente();
 
         setTimeout(() => {
-            mensajeRegistro.classList.add("hidden");
+            mensajeForm.classList.add("hidden");
         }, 4000);
 
     } catch (error) {
-        console.error("Error al registrar estadística:", error);
-        mensajeRegistro.textContent = "Error al guardar el registro.";
-        mensajeRegistro.classList.remove("text-emerald-600");
-        mensajeRegistro.classList.add("text-red-600");
+        console.error("Error al guardar receta:", error);
+        mensajeForm.textContent = "Error al guardar la receta en la base de datos.";
+        mensajeForm.classList.remove("text-emerald-600");
+        mensajeForm.classList.add("text-red-600");
     }
 }
 
-async function cargarHistoricoEstadisticas() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "produccion_historico"));
-        tablaHistoricoCuerpo.innerHTML = "";
-        let acumuladoTotal = 0;
-
-        querySnapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            acumuladoTotal += parseFloat(data.costoTotal) || 0;
-
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td class="py-2 px-3 text-slate-600">${data.fecha}</td>
-                <td class="py-2 px-3 font-medium text-slate-800">${data.nombrePlato}</td>
-                <td class="py-2 px-3 text-slate-600">${data.comensales}</td>
-                <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${(parseFloat(data.costoTotal) || 0).toFixed(2)}</td>
-            `;
-            tablaHistoricoCuerpo.appendChild(tr);
-        });
-
-        totalHistoricoSpan.textContent = `Total Acumulado: R$ ${acumuladoTotal.toFixed(2)}`;
-
-        if (querySnapshot.empty) {
-            tablaHistoricoCuerpo.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No hay registros históricos todavía.</td></tr>`;
-        }
-
-    } catch (error) {
-        console.error("Error al cargar histórico:", error);
-    }
+if (btnAgregarFila) {
+    btnAgregarFila.addEventListener("click", (e) => {
+        e.preventDefault();
+        agregarFilaIngrediente();
+    });
 }
 
-if (btnCalcular) btnCalcular.addEventListener("click", calcularCostoReceta);
-if (btnRegistrar) btnRegistrar.addEventListener("click", registrarEstadistica);
-
-verificarSesion();
+if (formReceta) formReceta.addEventListener("submit", guardarReceta);
+window.addEventListener("DOMContentLoaded", inicializarRecetasMenu);
