@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, setdoc, doc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -86,7 +86,6 @@ async function guardarInsumo(e) {
     const precioUnitario = parseFloat(inputPrecio.value);
     const idExistente = inputIdOculto.value;
 
-    // Generar ID único amigable si es nuevo
     const idIngrediente = idExistente ? idExistente : nombre.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]/g, "_");
@@ -96,7 +95,6 @@ async function guardarInsumo(e) {
         mensajeForm.classList.remove("hidden", "text-red-600");
         mensajeForm.classList.add("text-emerald-600");
 
-        // Usamos setDoc con merge: true para crear o actualizar
         await setDoc(doc(db, "ingredientes", idIngrediente), {
             nombre,
             unidad,
@@ -120,7 +118,6 @@ async function guardarInsumo(e) {
     }
 }
 
-// Preparar formulario para editar
 function prepararEdicion(id, nombre, unidad, precio) {
     inputIdOculto.value = id;
     inputNombre.value = nombre;
@@ -133,7 +130,6 @@ function prepararEdicion(id, nombre, unidad, precio) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Cancelar edición
 function cancelarEdicion() {
     limpiarFormulario();
 }
@@ -146,7 +142,6 @@ function limpiarFormulario() {
     btnCancelarEdicion.classList.add("hidden");
 }
 
-// Eliminar Insumo
 async function eliminarInsumo(id) {
     if (confirm("¿Estás seguro de que deseas eliminar este insumo de la base de datos?")) {
         try {
