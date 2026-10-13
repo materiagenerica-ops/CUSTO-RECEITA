@@ -1,183 +1,47 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custo Receita - Gestión de Menú Tipo</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
-
-    <!-- LOGIN CONTAINER -->
-    <div id="login-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 max-w-sm w-full space-y-6 text-center">
-            <div class="flex justify-center">
-                <img src="logotipoc.jpg" alt="Custo Receita Logo" class="h-16 w-auto object-contain">
-            </div>
-            <div>
-                <h2 class="text-xl font-bold text-slate-900">Custo Receita</h2>
-                <p class="text-xs text-slate-500 mt-1">Torres, RS (Brasil) - Acceso Restringido</p>
-            </div>
-            <form onsubmit="intentarLogin(event)" class="space-y-4 text-left">
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Usuario</label>
-                    <input type="text" id="login-usuario" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-                <p id="login-error" class="text-xs text-red-600 text-center font-medium hidden">Usuario o contraseña incorrectos.</p>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
-                    Ingresar al Sistema
-                </button>
-            </form>
+<!-- Sección para agregar ingredientes -->
+<div>
+    <h3 class="text-sm font-bold text-slate-800 mb-3">Ingredientes del Plato</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3 items-end">
+        <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Seleccionar Insumo</label>
+            <select id="select-ingrediente" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">-- Cargando insumos... --</option>
+            </select>
         </div>
-    </div>
-
-    <!-- APP CONTAINER -->
-    <div id="app-container" class="hidden min-h-screen flex flex-col justify-between">
         <div>
-            <!-- Encabezado con Logotipo y Salir -->
-            <header class="bg-white shadow-sm border-b border-slate-200 py-4 px-6 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <img src="logotipoc.jpg" alt="Custo Receita Logo" class="h-12 w-auto object-contain">
-                    <div>
-                        <h1 class="text-xl font-bold text-slate-900 leading-tight">Custo Receita</h1>
-                        <p class="text-xs text-slate-500">Gestión de Menús - Torres, RS (Brasil)</p>
-                    </div>
-                </div>
-                <button id="btn-salir" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-700 text-xs font-semibold px-4 py-2 rounded-xl border border-slate-200 transition cursor-pointer">
-                    🚪 Salir
-                </button>
-            </header>
-
-            <!-- Barra de Menú Horizontal -->
-            <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-3">
-                <div class="max-w-6xl mx-auto flex items-center space-x-3 overflow-x-auto">
-                    <a href="index.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
-                        <span>🏠</span> <span>Calculadora</span>
-                    </a>
-                    <a href="carga_ingredientes.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
-                        <span>📦</span> <span>Carga de Insumos</span>
-                    </a>
-                    <a href="recetas_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-white bg-emerald-600 px-4 py-2.5 rounded-xl shadow-sm transition">
-                        <span>🍽️</span> <span>Menú Tipo</span>
-                    </a>
-                    <a href="listados.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
-                        <span>📋</span> <span>Listado de Alimentos</span>
-                    </a>
-                    <a href="cronograma_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
-                        <span>📅</span> <span>Cronograma Menú</span>
-                    </a>
-                </div>
-            </nav>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Cantidad</label>
+            <input type="number" id="input-cantidad-ing" step="any" placeholder="Ej. 500 o 1.5" 
+                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
         </div>
-
-        <!-- Contenido Principal -->
-        <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-8">
-            
-            <!-- Formulario de Creación / Edición de Menú Tipo -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h2 id="titulo-form-receta" class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
-                    <span>🍽️</span> Creación de Menú Tipo (Plato)
-                </h2>
-                <p class="text-xs text-slate-500 mb-6">Configura los ingredientes necesarios y el rendimiento base en porciones para cada plato.</p>
-                
-                <form id="form-receta" class="space-y-4">
-                    <input type="hidden" id="receta-id-oculto">
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Nombre del Plato</label>
-                            <input type="text" id="receta-nombre" required placeholder="Ej. Pollo al disco con arroz" 
-                                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Rendimiento Base (Porciones / Comensales)</label>
-                            <input type="number" id="receta-porciones" min="1" value="10" required 
-                                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Nombre o archivo de la Foto del Plato (Opcional)</label>
-                        <input type="text" id="receta-imagen" placeholder="Ej. foto.jpg" 
-                            class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-
-                    <hr class="border-slate-100 my-4">
-
-                    <!-- Sección para agregar ingredientes -->
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800 mb-3">Ingredientes del Plato</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3 items-end">
-                            <div class="sm:col-span-2">
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Seleccionar Insumo</label>
-                                <select id="select-ingrediente" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                    <option value="">-- Cargando insumos... --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Cantidad Base</label>
-                                <input type="number" id="input-cantidad-ing" step="any" placeholder="Ej. 1.5 o 500" 
-                                    class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <button type="button" id="btn-agregar-ing" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl text-xs transition shadow-sm cursor-pointer mb-4">
-                            ➕ Agregar Ingrediente al Plato
-                        </button>
-
-                        <!-- Tabla de ingredientes agregados -->
-                        <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs">
-                                        <th class="py-2 px-3">Insumo</th>
-                                        <th class="py-2 px-3">Cantidad</th>
-                                        <th class="py-2 px-3 text-right">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-ingredientes-receta" class="divide-y divide-slate-100 text-sm">
-                                    <tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados a este plato.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-                        <p id="mensaje-receta" class="text-xs font-medium text-emerald-600 hidden"></p>
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <button type="button" id="btn-cancelar-edicion-receta" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-5 py-3 rounded-xl text-xs transition cursor-pointer">
-                                Cancelar
-                            </button>
-                            <button type="submit" id="btn-guardar-receta" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-3 rounded-xl text-xs transition shadow-sm cursor-pointer">
-                                Grabar Menú
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Listado de Menús Registrados -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <span>📋</span> Menús Tipo Registrados
-                </h2>
-                <div id="contenedor-tarjetas-recetas" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Dinámico -->
-                </div>
-            </section>
-        </main>
-
-        <!-- Pie de página -->
-        <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-            Custo Receita &copy; 2026 - Gestión de Costos Gastronómicos
-        </footer>
+        <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Unidad de Medida</label>
+            <select id="select-unidad-ing" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="gramos">gramos (g)</option>
+                <option value="kg">kilogramos (kg)</option>
+                <option value="mililitros">mililitros (ml)</option>
+                <option value="litros">litros (L)</option>
+                <option value="unidades">unidades (un)</option>
+            </select>
+        </div>
     </div>
 
-    <script type="module" src="recetas_menu.js"></script>
-</body>
-</html>
+    <button type="button" id="btn-agregar-ing" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl text-xs transition shadow-sm cursor-pointer mb-4">
+        ➕ Agregar Ingrediente al Plato
+    </button>
+
+    <!-- Tabla de ingredientes agregados -->
+    <div class="overflow-x-auto border border-slate-200 rounded-xl">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs">
+                    <th class="py-2 px-3">Insumo</th>
+                    <th class="py-2 px-3">Cantidad y Unidad</th>
+                    <th class="py-2 px-3 text-right">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-ingredientes-receta" class="divide-y divide-slate-100 text-sm">
+                <tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados a este plato.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
