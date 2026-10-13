@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -107,7 +107,6 @@ async function inicializarApp() {
     }
 }
 
-// Cálculo de costos matemático exacto y blindado
 function calcularCostoReceta() {
     const recetaId = selectReceta.value;
     const comensalesDeseados = parseInt(inputComensales.value) || 1;
@@ -138,18 +137,15 @@ function calcularCostoReceta() {
     receta.ingredientes.forEach(item => {
         const ingInfo = cacheIngredientes[item.idIngrediente];
         if (ingInfo) {
-            // Forzar conversión numérica limpia (incluso si viene con comas)
             const cantidadBaseReceta = Number(String(item.cantidad).replace(',', '.')) || 0;
             const precioUnitario = Number(String(ingInfo.precioUnitario).replace(',', '.')) || 0;
             
-            // Cantidad proporcional para el lote de comensales seleccionados
             let cantidadParaLote = (cantidadBaseReceta / porcionesBaseReceta) * comensalesDeseados;
             
             let costoParcial = 0;
             let textoCantidadMostrar = "";
 
             if (ingInfo.unidad === "kg") {
-                // Si la cantidad es menor a 1 kg, lo mostramos en gramos para mayor claridad visual
                 if (cantidadParaLote < 1) {
                     let gramos = cantidadParaLote * 1000;
                     textoCantidadMostrar = `${gramos.toFixed(0)} g`;
@@ -172,7 +168,6 @@ function calcularCostoReceta() {
                 textoCantidadMostrar = `${cantidadParaLote.toFixed(0)} ml`;
                 costoParcial = (cantidadParaLote / 1000) * precioUnitario;
             } else {
-                // Unidades (piezas, docenas, atados)
                 textoCantidadMostrar = `${cantidadParaLote.toFixed(1)} ${ingInfo.unidad}`;
                 costoParcial = cantidadParaLote * precioUnitario;
             }
@@ -240,8 +235,15 @@ async function cargarHistoricoEstadisticas() {
         tablaHistoricoCuerpo.innerHTML = "";
         let acumuladoTotal = 0;
 
+        if (querySnapshot.empty) {
+            tablaHistoricoCuerpo.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400 text-xs">No hay registros históricos todavía.</td></tr>`;
+            totalHistoricoSpan.textContent = `Total Acumulado: R$ 0.00`;
+            return;
+        }
+
         querySnapshot.forEach(docSnap => {
             const data = docSnap.data();
+            const id = docSnap.id;
             const costoH = Number(String(data.costoTotal).replace(',', '.')) || 0;
             acumuladoTotal += costoH;
 
@@ -251,15 +253,33 @@ async function cargarHistoricoEstadisticas() {
                 <td class="py-2 px-3 font-medium text-slate-800">${data.nombrePlato}</td>
                 <td class="py-2 px-3 text-slate-600">${data.comensales}</td>
                 <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${costoH.toFixed(2)}</td>
+                <td class="py-2 px-3 text-right">
+                    <button class="btn-eliminar-historico bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-2.5 py-1 rounded-lg border border-red-200 transition cursor-pointer" 
+                        data-id="${id}">
+                        🗑️ Eliminar
+                    </button>
+                </td>
             `;
             tablaHistoricoCuerpo.appendChild(tr);
         });
 
         totalHistoricoSpan.textContent = `Total Acumulado: R$ ${acumuladoTotal.toFixed(2)}`;
 
-        if (querySnapshot.empty) {
-            tablaHistoricoCuerpo.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No hay registros históricos todavía.</td></tr>`;
-        }
+        // Activar botones de eliminar en el histórico
+        document.querySelectorAll(".btn-eliminar-historico").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const idRegistro = e.currentTarget.dataset.id;
+                if (confirm("¿Estás seguro de que deseas eliminar este registro histórico?")) {
+                    try {
+                        await deleteDoc(doc(db, "produccion_historico", idRegistro));
+                        await cargarHistoricoEstadisticas();
+                    } catch (err) {
+                        console.error("Error al eliminar registro histórico:", err);
+                        alert("No se pudo eliminar el registro.");
+                    }
+                }
+            });
+        });
 
     } catch (error) {
         console.error("Error al cargar histórico:", error);
