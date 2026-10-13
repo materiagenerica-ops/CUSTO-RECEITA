@@ -13,7 +13,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Restauración de la función de login global
 window.intentarLogin = function(e) {
     e.preventDefault();
     const usuario = document.getElementById("login-usuario").value.trim();
