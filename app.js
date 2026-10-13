@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -68,6 +68,14 @@ const btnRegistrar = document.getElementById("btn-registrar");
 const mensajeRegistro = document.getElementById("mensaje-registro");
 const tablaHistoricoCuerpo = document.getElementById("tabla-historico-cuerpo");
 const totalHistoricoSpan = document.getElementById("total-historico");
+
+// Modal de edición
+const modalEditarHistorico = document.getElementById("modal-editar-historico");
+const modalIdRegistro = document.getElementById("modal-id-registro");
+const modalPlatoInfo = document.getElementById("modal-plato-info");
+const modalInputFecha = document.getElementById("modal-input-fecha");
+const modalBtnCancelar = document.getElementById("modal-btn-cancelar");
+const modalBtnGuardar = document.getElementById("modal-btn-guardar");
 
 function inicializarFechaHoy() {
     const hoy = new Date().toISOString().split('T')[0];
@@ -253,7 +261,11 @@ async function cargarHistoricoEstadisticas() {
                 <td class="py-2 px-3 font-medium text-slate-800">${data.nombrePlato}</td>
                 <td class="py-2 px-3 text-slate-600">${data.comensales}</td>
                 <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${costoH.toFixed(2)}</td>
-                <td class="py-2 px-3 text-right">
+                <td class="py-2 px-3 text-right space-x-2 whitespace-nowrap">
+                    <button class="btn-editar-historico bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-lg border border-amber-200 transition cursor-pointer" 
+                        data-id="${id}" data-fecha="${data.fecha}" data-plato="${data.nombrePlato}">
+                        ✏️ Editar
+                    </button>
                     <button class="btn-eliminar-historico bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-2.5 py-1 rounded-lg border border-red-200 transition cursor-pointer" 
                         data-id="${id}">
                         🗑️ Eliminar
@@ -270,20 +282,63 @@ async function cargarHistoricoEstadisticas() {
     }
 }
 
+// Delegación de eventos para la tabla del histórico (Editar y Eliminar)
 if (tablaHistoricoCuerpo) {
     tablaHistoricoCuerpo.addEventListener("click", async (e) => {
-        const btn = e.target.closest(".btn-eliminar-historico");
-        if (!btn) return;
-
-        const idRegistro = btn.dataset.id;
-        if (confirm("¿Estás seguro de que deseas eliminar este registro histórico?")) {
-            try {
-                await deleteDoc(doc(db, "produccion_historico", idRegistro));
-                await cargarHistoricoEstadisticas();
-            } catch (err) {
-                console.error("Error al eliminar registro histórico:", err);
-                alert("No se pudo eliminar el registro.");
+        // Botón Eliminar
+        const btnEliminar = e.target.closest(".btn-eliminar-historico");
+        if (btnEliminar) {
+            const idRegistro = btnEliminar.dataset.id;
+            if (confirm("¿Estás seguro de que deseas eliminar este registro histórico?")) {
+                try {
+                    await deleteDoc(doc(db, "produccion_historico", idRegistro));
+                    await cargarHistoricoEstadisticas();
+                } catch (err) {
+                    console.error("Error al eliminar registro histórico:", err);
+                    alert("No se pudo eliminar el registro.");
+                }
             }
+            return;
+        }
+
+        // Botón Editar
+        const btnEditar = e.target.closest(".btn-editar-historico");
+        if (btnEditar) {
+            const { id, fecha, plato } = btnEditar.dataset;
+            modalIdRegistro.value = id;
+            modalInputFecha.value = fecha;
+            modalPlatoInfo.textContent = `Plato: ${plato}`;
+            modalEditarHistorico.classList.remove("hidden");
+        }
+    });
+}
+
+// Eventos del Modal de Edición
+if (modalBtnCancelar) {
+    modalBtnCancelar.addEventListener("click", () => {
+        modalEditarHistorico.classList.add("hidden");
+    });
+}
+
+if (modalBtnGuardar) {
+    modalBtnGuardar.addEventListener("click", async () => {
+        const id = modalIdRegistro.value;
+        const nuevaFecha = modalInputFecha.value;
+
+        if (!id || !nuevaFecha) {
+            alert("Por favor, selecciona una fecha válida.");
+            return;
+        }
+
+        try {
+            const refDoc = doc(db, "produccion_historico", id);
+            await updateDoc(refDoc, { fecha: nuevaFecha });
+
+            modalEditarHistorico.classList.add("hidden");
+            await cargarHistoricoEstadisticas();
+        } catch (err) {
+            console.error("Error al actualizar la fecha:", err);
+            alert("No se pudo actualizar el registro.");
         }
     });
 }
