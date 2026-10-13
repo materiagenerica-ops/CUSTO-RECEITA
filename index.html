@@ -180,7 +180,7 @@
                                 <th class="py-2 px-3">Plato Preparado</th>
                                 <th class="py-2 px-3">Comensales</th>
                                 <th class="py-2 px-3 text-right">Costo Total (R$)</th>
-                                <th class="py-2 px-3 text-right">Acción</th>
+                                <th class="py-2 px-3 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tabla-historico-cuerpo" class="divide-y divide-slate-100 text-sm">
@@ -195,6 +195,29 @@
         <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
             Custo Receita &copy; 2026 - Gestión de Costos Gastronómicos
         </footer>
+    </div>
+
+    <!-- MODAL DE EDICIÓN DE FECHA EN HISTÓRICO -->
+    <div id="modal-editar-historico" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 max-w-sm w-full space-y-4">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <span>✏️</span> Modificar Fecha de Registro
+            </h3>
+            <p id="modal-plato-info" class="text-xs text-slate-500"></p>
+            <input type="hidden" id="modal-id-registro">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Nueva Fecha</label>
+                <input type="date" id="modal-input-fecha" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" id="modal-btn-cancelar" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-xl text-xs transition cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="button" id="modal-btn-guardar" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-xl text-xs transition shadow-sm cursor-pointer">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>
