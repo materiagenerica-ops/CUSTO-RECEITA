@@ -51,18 +51,25 @@
                 </div>
             </header>
 
-            <!-- Barra de Menú Horizontal con Botones Estilizados -->
+            <!-- Barra de Menú Horizontal con Botones Estilizados y Botón Salir -->
             <nav class="bg-white border-b border-slate-200 shadow-xs px-6 py-3">
-                <div class="max-w-4xl mx-auto flex items-center justify-center sm:justify-start space-x-3 overflow-x-auto">
-                    <a href="index.html" class="flex items-center space-x-2 text-xs font-semibold text-white bg-emerald-600 px-4 py-2.5 rounded-xl shadow-sm transition">
-                        <span>🏠</span> <span>Calculadora</span>
-                    </a>
-                    <a href="carga_ingredientes.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
-                        <span>📦</span> <span>Carga de Insumos</span>
-                    </a>
-                    <a href="recetas_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
-                        <span>🍽️</span> <span>Menú Tipo</span>
-                    </a>
+                <div class="max-w-4xl mx-auto flex items-center justify-between overflow-x-auto gap-2">
+                    <div class="flex items-center space-x-3">
+                        <a href="index.html" class="flex items-center space-x-2 text-xs font-semibold text-white bg-emerald-600 px-4 py-2.5 rounded-xl shadow-sm transition">
+                            <span>🏠</span> <span>Calculadora</span>
+                        </a>
+                        <a href="carga_ingredientes.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                            <span>📦</span> <span>Carga de Insumos</span>
+                        </a>
+                        <a href="recetas_menu.html" class="flex items-center space-x-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl border border-slate-200 transition">
+                            <span>🍽️</span> <span>Menú Tipo</span>
+                        </a>
+                    </div>
+                    <div>
+                        <button id="btn-salir" class="flex items-center space-x-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl border border-red-200 transition cursor-pointer">
+                            <span>🚪</span> <span>Salir</span>
+                        </button>
+                    </div>
                 </div>
             </nav>
         </div>
