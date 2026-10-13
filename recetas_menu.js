@@ -13,6 +13,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Restauración de la función de login global
+window.intentarLogin = function(e) {
+    e.preventDefault();
+    const usuario = document.getElementById("login-usuario").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+    const loginError = document.getElementById("login-error");
+
+    if (usuario === "DRPEREYRA" && password === "235689") {
+        sessionStorage.setItem("auth_custo", "true");
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("app-container").classList.remove("hidden");
+        inicializarModulo();
+    } else {
+        loginError.classList.remove("hidden");
+    }
+};
+
+function verificarSesion() {
+    if (sessionStorage.getItem("auth_custo") === "true") {
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("app-container").classList.remove("hidden");
+        inicializarModulo();
+    }
+}
+
+const btnSalir = document.getElementById("btn-salir");
+if (btnSalir) {
+    btnSalir.addEventListener("click", () => {
+        sessionStorage.removeItem("auth_custo");
+        window.location.reload();
+    });
+}
+
 let ingredientesDisponibles = [];
 let ingredientesSeleccionados = [];
 
@@ -241,4 +274,4 @@ function limpiarFormularioReceta() {
 }
 
 formReceta.addEventListener("submit", guardarReceta);
-window.addEventListener("DOMContentLoaded", inicializarModulo);
+verificarSesion();
