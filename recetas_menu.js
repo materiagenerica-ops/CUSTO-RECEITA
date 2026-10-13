@@ -43,39 +43,47 @@ async function cargarIngredientesSelect() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
         ingredientesDisponibles = [];
-        selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
+        if (selectIngrediente) {
+            selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
 
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const item = { id: docSnap.id, ...data };
-            ingredientesDisponibles.push(item);
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const item = { id: docSnap.id, ...data };
+                ingredientesDisponibles.push(item);
 
-            const opt = document.createElement("option");
-            opt.value = item.id;
-            opt.textContent = `${item.nombre} (${item.unidad})`;
-            selectIngrediente.appendChild(opt);
-        });
+                const opt = document.createElement("option");
+                opt.value = item.id;
+                opt.textContent = `${item.nombre} (${item.unidad})`;
+                selectIngrediente.appendChild(opt);
+            });
+        }
     } catch (error) {
         console.error("Error al cargar ingredientes para select:", error);
     }
 }
 
 if (btnAgregarIng) {
-    btnAgregarIng.addEventListener("click", () => {
+    btnAgregarIng.addEventListener("click", (e) => {
+        e.preventDefault(); // Evita cualquier comportamiento de formulario por defecto
+        
         const idIngrediente = selectIngrediente.value;
-        const cantidad = Number(String(inputCantidadIng.value).replace(',', '.')) || 0;
+        const cantidadStr = inputCantidadIng.value.trim().replace(',', '.');
+        const cantidad = Number(cantidadStr);
 
         if (!idIngrediente) {
             alert("Por favor, seleccione un ingrediente.");
             return;
         }
-        if (cantidad <= 0) {
+        if (isNaN(cantidad) || cantidad <= 0) {
             alert("Por favor, ingrese una cantidad válida mayor a 0.");
             return;
         }
 
         const ingInfo = ingredientesDisponibles.find(i => i.id === idIngrediente);
-        if (!ingInfo) return;
+        if (!ingInfo) {
+            alert("No se encontró la información del ingrediente seleccionado.");
+            return;
+        }
 
         // Verificar si ya fue agregado para actualizar o sumar
         const existente = ingredientesSeleccionados.find(i => i.idIngrediente === idIngrediente);
@@ -97,7 +105,9 @@ if (btnAgregarIng) {
 }
 
 function renderizarTablaIngredientesReceta() {
+    if (!tablaIngredientesReceta) return;
     tablaIngredientesReceta.innerHTML = "";
+    
     if (ingredientesSeleccionados.length === 0) {
         tablaIngredientesReceta.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados a este plato.</td></tr>`;
         return;
@@ -143,7 +153,6 @@ async function guardarReceta(e) {
         return;
     }
 
-    // Generar ID limpio basado en el nombre si es nuevo
     const idReceta = idExistente ? idExistente : nombre.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]/g, "_");
@@ -184,6 +193,7 @@ async function guardarReceta(e) {
 async function cargarRecetas() {
     try {
         const querySnapshot = await getDocs(collection(db, "recetas"));
+        if (!contenedorTarjetas) return;
         contenedorTarjetas.innerHTML = "";
 
         if (querySnapshot.empty) {
@@ -194,14 +204,6 @@ async function cargarRecetas() {
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-
-            // Calcular costo estimado del plato base si los ingredientes están disponibles
-            let costoEstimado = 0;
-            if (data.ingredientes && Array.isArray(data.ingredientes)) {
-                data.ingredientes.forEach(item => {
-                    // Buscar insumo en memoria o calcular si es necesario
-                });
-            }
 
             const tarjeta = document.createElement("div");
             tarjeta.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between space-y-4";
@@ -240,7 +242,6 @@ async function cargarRecetas() {
             contenedorTarjetas.appendChild(tarjeta);
         });
 
-        // Eventos para botones de tarjeta
         document.querySelectorAll(".btn-eliminar-receta").forEach(btn => {
             btn.addEventListener("click", async (e) => {
                 const id = e.currentTarget.dataset.id;
@@ -268,34 +269,30 @@ async function cargarRecetas() {
     }
 }
 
-function prepararEdicionReceta(id, nombre, porciones, imagen) {
+async function prepararEdicionReceta(id, nombre, porciones, imagen) {
     inputRecetaId.value = id;
     inputNombre.value = nombre;
     inputPorciones.value = porciones;
     inputImagen.value = imagen || "";
 
-    // Buscar los ingredientes de esa receta para cargarlos en memoria
-    const recetaMemoria = contenedorTarjetas; // Se pueden recuperar o buscar
-    // Para simplificar, buscamos en la colección actual o recargamos:
-    getDocs(collection(db, "recetas")).then(snapshot => {
-        snapshot.forEach(docSnap => {
-            if (docSnap.id === id) {
-                const data = docSnap.data();
-                ingredientesSeleccionados = [];
-                if (data.ingredientes) {
-                    data.ingredientes.forEach(ing => {
-                        const infoIng = ingredientesDisponibles.find(i => i.id === ing.idIngrediente);
-                        ingredientesSeleccionados.push({
-                            idIngrediente: ing.idIngrediente,
-                            nombre: infoIng ? infoIng.nombre : ing.idIngrediente,
-                            unidad: infoIng ? infoIng.unidad : '',
-                            cantidad: ing.cantidad
-                        });
+    const snapshot = await getDocs(collection(db, "recetas"));
+    snapshot.forEach(docSnap => {
+        if (docSnap.id === id) {
+            const data = docSnap.data();
+            ingredientesSeleccionados = [];
+            if (data.ingredientes) {
+                data.ingredientes.forEach(ing => {
+                    const infoIng = ingredientesDisponibles.find(i => i.id === ing.idIngrediente);
+                    ingredientesSeleccionados.push({
+                        idIngrediente: ing.idIngrediente,
+                        nombre: infoIng ? infoIng.nombre : ing.idIngrediente,
+                        unidad: infoIng ? infoIng.unidad : '',
+                        cantidad: ing.cantidad
                     });
-                }
-                renderizarTablaIngredientesReceta();
+                });
             }
-        });
+            renderizarTablaIngredientesReceta();
+        }
     });
 
     tituloFormReceta.innerHTML = `<span>✏️</span> Modificar Menú Tipo`;
