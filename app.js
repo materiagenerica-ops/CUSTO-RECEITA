@@ -44,6 +44,15 @@ formLogin.addEventListener("submit", (e) => {
     }
 });
 
+// Funcionalidad del botón Salir
+const btnSalir = document.getElementById("btn-salir");
+if (btnSalir) {
+    btnSalir.addEventListener("click", () => {
+        sessionStorage.removeItem("auth_custo");
+        window.location.reload();
+    });
+}
+
 let cacheIngredientes = {};
 let cacheRecetas = [];
 let calculoActualMemoria = null;
