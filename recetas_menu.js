@@ -13,43 +13,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Control de sesión global para el script
-window.intentarLogin = function(e) {
-    e.preventDefault();
-    const usuario = document.getElementById("login-usuario").value.trim();
-    const password = document.getElementById("login-password").value.trim();
-    const loginError = document.getElementById("login-error");
-
-    if (usuario === "DRPEREYRA" && password === "235689") {
-        sessionStorage.setItem("auth_custo", "true");
-        document.getElementById("login-container").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        inicializarModulo();
-    } else {
-        loginError.classList.remove("hidden");
-    }
-};
-
-function verificarSesion() {
-    if (sessionStorage.getItem("auth_custo") === "true") {
-        document.getElementById("login-container").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        inicializarModulo();
-    }
-}
-
-const btnSalir = document.getElementById("btn-salir");
-if (btnSalir) {
-    btnSalir.addEventListener("click", () => {
-        sessionStorage.removeItem("auth_custo");
-        window.location.reload();
-    });
-}
-
 let ingredientesDisponibles = [];
 let ingredientesSeleccionados = [];
 
-// Elementos del DOM
 const formReceta = document.getElementById("form-receta");
 const inputNombre = document.getElementById("receta-nombre");
 const inputPorciones = document.getElementById("receta-porciones");
@@ -69,7 +35,7 @@ async function inicializarModulo() {
         await cargarIngredientesSelect();
         await cargarRecetas();
     } catch (error) {
-        console.error("Error al inicializar el módulo de menús:", error);
+        console.error("Error al inicializar el módulo:", error);
     }
 }
 
@@ -77,82 +43,50 @@ async function cargarIngredientesSelect() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
         ingredientesDisponibles = [];
-        
-        if (selectIngrediente) {
-            selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
+        selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
 
-            querySnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const item = { id: docSnap.id, ...data };
-                ingredientesDisponibles.push(item);
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const item = { id: docSnap.id, ...data };
+            ingredientesDisponibles.push(item);
 
-                const opt = document.createElement("option");
-                opt.value = item.id;
-                opt.textContent = `${item.nombre} (${item.unidad})`;
-                selectIngrediente.appendChild(opt);
-            });
-        }
+            const opt = document.createElement("option");
+            opt.value = item.id;
+            opt.textContent = `${item.nombre} (${item.unidad})`;
+            selectIngrediente.appendChild(opt);
+        });
     } catch (error) {
-        console.error("Error al cargar ingredientes para select:", error);
+        console.error("Error al cargar ingredientes:", error);
     }
 }
 
-// Evento directo para agregar ingrediente a la tabla temporal
 if (btnAgregarIng) {
-    btnAgregarIng.addEventListener("click", (e) => {
-        e.preventDefault();
-
-        if (!selectIngrediente || !inputCantidadIng) {
-            alert("Error: Faltan elementos en el formulario.");
-            return;
-        }
-
+    btnAgregarIng.addEventListener("click", () => {
         const idIngrediente = selectIngrediente.value;
-        const cantidadStr = inputCantidadIng.value.trim().replace(',', '.');
-        const cantidad = Number(cantidadStr);
+        const cantidad = Number(String(inputCantidadIng.value).replace(',', '.')) || 0;
 
-        if (!idIngrediente) {
-            alert("Por favor, seleccione un ingrediente de la lista.");
-            return;
-        }
-        if (isNaN(cantidad) || cantidad <= 0) {
-            alert("Por favor, ingrese una cantidad numérica válida mayor a 0.");
-            return;
-        }
+        if (!idIngrediente || cantidad <= 0) return;
 
         const ingInfo = ingredientesDisponibles.find(i => i.id === idIngrediente);
-        if (!ingInfo) {
-            alert("No se encontró la información del ingrediente seleccionado.");
-            return;
-        }
+        if (!ingInfo) return;
 
-        // Verificar si ya fue agregado para actualizarlo o sumarlo
-        const existente = ingredientesSeleccionados.find(i => i.idIngrediente === idIngrediente);
-        if (existente) {
-            existente.cantidad = cantidad;
-        } else {
-            ingredientesSeleccionados.push({
-                idIngrediente,
-                nombre: ingInfo.nombre,
-                unidad: ingInfo.unidad,
-                cantidad
-            });
-        }
+        ingredientesSeleccionados.push({
+            idIngrediente,
+            nombre: ingInfo.nombre,
+            unidad: ingInfo.unidad,
+            cantidad
+        });
 
-        // Limpiar campos de insumo
         inputCantidadIng.value = "";
         selectIngrediente.value = "";
-        
         renderizarTablaIngredientesReceta();
     });
 }
 
 function renderizarTablaIngredientesReceta() {
-    if (!tablaIngredientesReceta) return;
     tablaIngredientesReceta.innerHTML = "";
-    
     if (ingredientesSeleccionados.length === 0) {
-        tablaIngredientesReceta.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados a este plato.</td></tr>`;
+        tablaIngredientesReceta.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados.</td></tr>`;
         return;
     }
 
@@ -186,26 +120,14 @@ async function guardarReceta(e) {
     const imagen = inputImagen.value.trim();
     const idExistente = inputRecetaId.value;
 
-    if (!nombre) {
-        alert("El nombre del plato es obligatorio.");
-        return;
-    }
-
-    if (ingredientesSeleccionados.length === 0) {
-        alert("Debe agregar al menos un ingrediente a la receta.");
-        return;
-    }
+    if (!nombre || ingredientesSeleccionados.length === 0) return;
 
     const idReceta = idExistente ? idExistente : nombre.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]/g, "_");
 
     try {
-        mensajeReceta.textContent = "Guardando menú en la base de datos...";
-        mensajeReceta.classList.remove("hidden", "text-red-600");
-        mensajeReceta.classList.add("text-emerald-600");
-
-        const datosPlato = {
+        await setDoc(doc(db, "recetas", idReceta), {
             nombre,
             porciones,
             imagen,
@@ -213,34 +135,22 @@ async function guardarReceta(e) {
                 idIngrediente: i.idIngrediente,
                 cantidad: i.cantidad
             }))
-        };
+        }, { merge: true });
 
-        await setDoc(doc(db, "recetas", idReceta), datosPlato, { merge: true });
-
-        mensajeReceta.textContent = "¡Menú guardado con éxito en Firebase!";
         limpiarFormularioReceta();
         await cargarRecetas();
-
-        setTimeout(() => {
-            mensajeReceta.classList.add("hidden");
-        }, 3500);
-
     } catch (error) {
-        console.error("Error crítico al guardar receta:", error);
-        mensajeReceta.textContent = "Error al guardar en Firebase: " + error.message;
-        mensajeReceta.classList.remove("text-emerald-600");
-        mensajeReceta.classList.add("text-red-600");
+        console.error("Error al guardar receta:", error);
     }
 }
 
 async function cargarRecetas() {
     try {
         const querySnapshot = await getDocs(collection(db, "recetas"));
-        if (!contenedorTarjetas) return;
         contenedorTarjetas.innerHTML = "";
 
         if (querySnapshot.empty) {
-            contenedorTarjetas.innerHTML = `<p class="text-xs text-slate-400 text-center col-span-full py-4">No hay menús registrados todavía.</p>`;
+            contenedorTarjetas.innerHTML = `<p class="text-xs text-slate-400 text-center col-span-full py-4">No hay menús registrados.</p>`;
             return;
         }
 
@@ -288,14 +198,9 @@ async function cargarRecetas() {
         document.querySelectorAll(".btn-eliminar-receta").forEach(btn => {
             btn.addEventListener("click", async (e) => {
                 const id = e.currentTarget.dataset.id;
-                if (confirm("¿Estás seguro de que deseas eliminar este menú?")) {
-                    try {
-                        await deleteDoc(doc(db, "recetas", id));
-                        await cargarRecetas();
-                    } catch (err) {
-                        console.error("Error al eliminar receta:", err);
-                        alert("No se pudo eliminar el menú.");
-                    }
+                if (confirm("¿Eliminar este menú?")) {
+                    await deleteDoc(doc(db, "recetas", id));
+                    await cargarRecetas();
                 }
             });
         });
@@ -303,45 +208,20 @@ async function cargarRecetas() {
         document.querySelectorAll(".btn-editar-receta").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const ds = e.currentTarget.dataset;
-                prepararEdicionReceta(ds.id, ds.nombre, ds.porciones, ds.imagen);
+                inputRecetaId.value = ds.id;
+                inputNombre.value = ds.nombre;
+                inputPorciones.value = ds.porciones;
+                inputImagen.value = ds.imagen || "";
+                tituloFormReceta.innerHTML = `<span>✏️</span> Modificar Menú Tipo`;
+                document.getElementById("btn-guardar-receta").textContent = "Actualizar Menú";
+                btnCancelarEdicion.classList.remove("hidden");
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         });
 
     } catch (error) {
         console.error("Error al cargar recetas:", error);
     }
-}
-
-async function prepararEdicionReceta(id, nombre, porciones, imagen) {
-    inputRecetaId.value = id;
-    inputNombre.value = nombre;
-    inputPorciones.value = porciones;
-    inputImagen.value = imagen || "";
-
-    const snapshot = await getDocs(collection(db, "recetas"));
-    snapshot.forEach(docSnap => {
-        if (docSnap.id === id) {
-            const data = docSnap.data();
-            ingredientesSeleccionados = [];
-            if (data.ingredientes) {
-                data.ingredientes.forEach(ing => {
-                    const infoIng = ingredientesDisponibles.find(i => i.id === ing.idIngrediente);
-                    ingredientesSeleccionados.push({
-                        idIngrediente: ing.idIngrediente,
-                        nombre: infoIng ? infoIng.nombre : ing.idIngrediente,
-                        unidad: infoIng ? infoIng.unidad : '',
-                        cantidad: ing.cantidad
-                    });
-                });
-            }
-            renderizarTablaIngredientesReceta();
-        }
-    });
-
-    tituloFormReceta.innerHTML = `<span>✏️</span> Modificar Menú Tipo`;
-    document.getElementById("btn-guardar-receta").textContent = "Actualizar Menú";
-    btnCancelarEdicion.classList.remove("hidden");
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 if (btnCancelarEdicion) {
@@ -351,7 +231,7 @@ if (btnCancelarEdicion) {
 }
 
 function limpiarFormularioReceta() {
-    if (formReceta) formReceta.reset();
+    formReceta.reset();
     inputRecetaId.value = "";
     ingredientesSeleccionados = [];
     renderizarTablaIngredientesReceta();
@@ -360,8 +240,5 @@ function limpiarFormularioReceta() {
     btnCancelarEdicion.classList.add("hidden");
 }
 
-if (formReceta) {
-    formReceta.addEventListener("submit", guardarReceta);
-}
-
-verificarSesion();
+formReceta.addEventListener("submit", guardarReceta);
+window.addEventListener("DOMContentLoaded", inicializarModulo);
