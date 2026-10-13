@@ -13,11 +13,41 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Manejo de Login
+const loginContainer = document.getElementById("login-container");
+const appContainer = document.getElementById("app-container");
+const formLogin = document.getElementById("form-login");
+const inputUsuario = document.getElementById("login-usuario");
+const inputPassword = document.getElementById("login-password");
+const loginError = document.getElementById("login-error");
+
+function verificarSesion() {
+    if (sessionStorage.getItem("auth_custo") === "true") {
+        loginContainer.classList.add("hidden");
+        appContainer.classList.remove("hidden");
+        inicializarApp();
+    }
+}
+
+formLogin.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const usuario = inputUsuario.value.trim();
+    const password = inputPassword.value.trim();
+
+    if (usuario === "DRPEREYRA" && password === "235689") {
+        sessionStorage.setItem("auth_custo", "true");
+        loginContainer.classList.add("hidden");
+        appContainer.classList.remove("hidden");
+        inicializarApp();
+    } else {
+        loginError.classList.remove("hidden");
+    }
+});
+
 let cacheIngredientes = {};
 let cacheRecetas = [];
-let calculoActualMemoria = null; // Para guardar temporalmente el cálculo antes de registrarlo
+let calculoActualMemoria = null;
 
-// Elementos DOM
 const selectReceta = document.getElementById("select-receta");
 const inputComensales = document.getElementById("input-comensales");
 const btnCalcular = document.getElementById("btn-calcular");
@@ -38,26 +68,22 @@ const mensajeRegistro = document.getElementById("mensaje-registro");
 const tablaHistoricoCuerpo = document.getElementById("tabla-historico-cuerpo");
 const totalHistoricoSpan = document.getElementById("total-historico");
 
-// Inicializar fecha de hoy por defecto en el input
 function inicializarFechaHoy() {
     const hoy = new Date().toISOString().split('T')[0];
     inputFecha.value = hoy;
 }
 
-// Cargar datos iniciales desde Firestore
 async function inicializarApp() {
     try {
         inicializarFechaHoy();
         mensajeEstado.textContent = "Sincronizando con base de datos...";
         
-        // 1. Ingredientes
         cacheIngredientes = {};
         const qIng = await getDocs(collection(db, "ingredientes"));
         qIng.forEach(docSnap => {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Recetas
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         selectReceta.innerHTML = '<option value="">-- Seleccione un plato del menú tipo --</option>';
@@ -70,9 +96,7 @@ async function inicializarApp() {
             selectReceta.appendChild(opt);
         });
 
-        // 3. Cargar Histórico Estadísticas
         await cargarHistoricoEstadisticas();
-
         mensajeEstado.textContent = "";
     } catch (error) {
         console.error("Error al inicializar:", error);
@@ -80,7 +104,6 @@ async function inicializarApp() {
     }
 }
 
-// Calcular Costo por Receta y Comensales
 function calcularCostoReceta() {
     const recetaId = selectReceta.value;
     const comensalesDeseados = parseInt(inputComensales.value) || 1;
@@ -98,7 +121,6 @@ function calcularCostoReceta() {
     txtLoteComensales.textContent = comensalesDeseados;
     tablaCuerpo.innerHTML = "";
 
-    // Manejar imagen si existe
     if (receta.imagen) {
         recetaFoto.src = receta.imagen;
         imagenRecetaContainer.classList.remove("hidden");
@@ -112,8 +134,6 @@ function calcularCostoReceta() {
     receta.ingredientes.forEach(item => {
         const ingInfo = cacheIngredientes[item.idIngrediente];
         if (ingInfo) {
-            // Cantidad proporcional a los comensales deseados
-            // (Cantidad en receta / porciones base) * comensalesDeseados
             let cantidadParaLote = (item.cantidad / porcionesBaseReceta) * comensalesDeseados;
             let divisor = (ingInfo.unidad === "kg" || ingInfo.unidad === "litro") ? 1000 : 1;
 
@@ -137,7 +157,6 @@ function calcularCostoReceta() {
     costoTotalSpan.textContent = `R$ ${costoTotalLote.toFixed(2)}`;
     resultadoContainer.classList.remove("hidden");
 
-    // Guardar en memoria para registrarlo si el usuario hace clic en el botón
     calculoActualMemoria = {
         fecha: inputFecha.value,
         nombrePlato: receta.nombre,
@@ -146,14 +165,12 @@ function calcularCostoReceta() {
     };
 }
 
-// Registrar en Firebase (produccion_historico)
 async function registrarEstadistica() {
     if (!calculoActualMemoria) {
         alert("Primero debes calcular el costo de un plato.");
         return;
     }
 
-    // Actualizar fecha por si el usuario la cambió en el input
     calculoActualMemoria.fecha = inputFecha.value;
 
     try {
@@ -164,8 +181,6 @@ async function registrarEstadistica() {
         await addDoc(collection(db, "produccion_historico"), calculoActualMemoria);
 
         mensajeRegistro.textContent = "¡Registro guardado en estadísticas con éxito!";
-        
-        // Recargar tabla de histórico
         await cargarHistoricoEstadisticas();
 
         setTimeout(() => {
@@ -180,7 +195,6 @@ async function registrarEstadistica() {
     }
 }
 
-// Cargar y mostrar histórico de estadísticas
 async function cargarHistoricoEstadisticas() {
     try {
         const querySnapshot = await getDocs(collection(db, "produccion_historico"));
@@ -212,7 +226,8 @@ async function cargarHistoricoEstadisticas() {
     }
 }
 
-// Listeners
 btnCalcular.addEventListener("click", calcularCostoReceta);
 btnRegistrar.addEventListener("click", registrarEstadistica);
-window.addEventListener("DOMContentLoaded", inicializarApp);
+
+// Verificar sesión al cargar la página
+window.addEventListener("DOMContentLoaded", verificarSesion);
