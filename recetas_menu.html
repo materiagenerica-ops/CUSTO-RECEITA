@@ -41,15 +41,18 @@
     </div>
 
     <!-- Contenido Principal -->
-    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
+    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-8">
         
+        <!-- Formulario de Alta / Edición de Receta -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
+            <h2 id="titulo-form-receta" class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
                 <span>🍽️</span> Alta de Menú Tipo / Recetas
             </h2>
-            <p class="text-xs text-slate-500 mb-6">Crea los platos del menú, define sus porciones y selecciona los ingredientes usando la unidad que prefieras (gramos, kilos, etc.).</p>
+            <p class="text-xs text-slate-500 mb-6">Crea nuevos platos o edita los existentes seleccionando sus ingredientes y porciones.</p>
             
             <form id="form-receta" class="space-y-6">
+                <input type="hidden" id="receta-id-oculto">
+                
                 <!-- Datos Generales -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="sm:col-span-2">
@@ -86,14 +89,42 @@
                     </div>
                 </div>
 
-                <!-- Botón Guardar -->
-                <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
+                <!-- Botones Guardar / Cancelar -->
+                <div class="pt-4 border-t border-slate-200 flex items-center justify-between gap-3">
                     <p id="mensaje-form" class="text-xs font-medium text-emerald-600 hidden"></p>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer ml-auto">
-                        Grabar Receta en Base
-                    </button>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button type="button" id="btn-cancelar-edicion" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-xl text-sm transition cursor-pointer">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-guardar-receta" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                            Grabar Receta en Base
+                        </button>
+                    </div>
                 </div>
             </form>
+        </section>
+
+        <!-- SECCIÓN: Menús / Recetas Registradas (Para Edición o Eliminación) -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span>📋</span> Menús Registrados (Para Editar Ingredientes o Eliminar)
+            </h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-500 text-xs">
+                            <th class="py-2 px-3">Plato</th>
+                            <th class="py-2 px-3">Porciones Base</th>
+                            <th class="py-2 px-3">Ingredientes Configurados</th>
+                            <th class="py-2 px-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-recetas-admin" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dinámico -->
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
 
