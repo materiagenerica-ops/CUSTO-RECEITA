@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let listaIngredientesGlobal = [];
+let cacheIngredientes = {};
 
 const formReceta = document.getElementById("form-receta");
 const inputNombre = document.getElementById("receta-nombre");
@@ -23,79 +23,93 @@ const contenedorIngredientes = document.getElementById("contenedor-ingredientes"
 const btnAgregarFila = document.getElementById("btn-agregar-fila");
 const mensajeForm = document.getElementById("mensaje-form");
 
-// Cargar ingredientes disponibles desde Firebase para poblar los selectores del formulario
-async function cargarIngredientesDisponibles() {
+// Cargar ingredientes desde Firebase para armar las opciones
+async function inicializarRecetasMenu() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
-        listaIngredientesGlobal = [];
-        querySnapshot.forEach((docSnap) => {
-            listaIngredientesGlobal.push({ id: docSnap.id, ...docSnap.data() });
-        });
+        cacheIngredientes = {};
         
-        // Agregar la primera fila por defecto si hay ingredientes
-        if (listaIngredientesGlobal.length > 0) {
-            agregarFilaIngrediente();
+        querySnapshot.forEach((docSnap) => {
+            cacheIngredientes[docSnap.id] = docSnap.data();
+        });
+
+        if (Object.keys(cacheIngredientes).length === 0) {
+            contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600">No hay insumos cargados. Ve a "Carga de Insumos" primero.</p>';
+            btnAgregarFila.disabled = true;
         } else {
-            contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600">Aún no hay insumos cargados. Ve a "Carga de Insumos" primero.</p>';
+            agregarFilaIngrediente();
         }
+
     } catch (error) {
         console.error("Error al cargar ingredientes:", error);
     }
 }
 
-// Añadir fila dinámica de ingrediente + cantidad
+// Agregar fila de ingrediente con indicador automático de su unidad
 function agregarFilaIngrediente() {
     const div = document.createElement("div");
-    div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200";
-    
-    let optionsHtml = listaIngredientesGlobal.map(ing => `<option value="${ing.id}">${ing.nombre} (${ing.unidad})</option>`).join("");
+    div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200";
+
+    let optionsHtml = '<option value="">-- Seleccione Insumo --</option>';
+    for (const [id, data] of Object.entries(cacheIngredientes)) {
+        optionsHtml += `<option value="${id}" data-unidad="${data.unidad}">${data.nombre} (${data.unidad})</option>`;
+    }
 
     div.innerHTML = `
-        <select class="select-ing flex-grow border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <select class="select-ingrediente flex-grow border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
             ${optionsHtml}
         </select>
-        <input type="number" step="any" placeholder="Cantidad total" class="input-cant w-32 border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-        <button type="button" class="btn-eliminar text-slate-400 hover:text-red-600 text-sm px-2 py-1 font-bold">✕</button>
+        <div class="flex items-center gap-1.5 w-40">
+            <input type="number" step="any" min="0.001" placeholder="Cant." class="input-cantidad w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <span class="span-unidad text-xs font-bold text-slate-500 w-16 whitespace-nowrap">-</span>
+        </div>
+        <button type="button" class="btn-eliminar-fila text-slate-400 hover:text-red-600 text-sm px-2 py-1 font-bold cursor-pointer">✕</button>
     `;
 
-    div.querySelector(".btn-eliminar").addEventListener("click", () => {
+    const selectIng = div.querySelector(".select-ingrediente");
+    const spanUnidad = div.querySelector(".span-unidad");
+
+    // Al cambiar el ingrediente, actualizar dinámicamente la etiqueta de la unidad
+    selectIng.addEventListener("change", (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const unidad = selectedOption.dataset.unidad || "-";
+        spanUnidad.textContent = unidad;
+    });
+
+    div.querySelector(".btn-eliminar-fila").addEventListener("click", () => {
         div.remove();
     });
 
     contenedorIngredientes.appendChild(div);
 }
 
-// Convertir archivo de imagen a Base64 para guardarlo directo en Firestore de forma simple
+// Convertir imagen seleccionada a Base64
 function convertirImagenABase64(file) {
     return new Promise((resolve, reject) => {
-        if (!file) {
-            resolve("");
-            return;
-        }
         const reader = new FileReader();
-        reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
     });
 }
 
-// Guardar Receta en Firebase
+// Guardar receta en Firebase
 async function guardarReceta(e) {
     e.preventDefault();
     const nombre = inputNombre.value.trim();
     const porciones = parseInt(inputPorciones.value) || 1;
-
-    // Recolectar ingredientes de las filas dinámicas
-    const filas = contenedorIngredientes.querySelectorAll("div");
-    const ingredientesReceta = [];
+    
+    const filas = contenedorIngredientes.querySelectorAll("div.flex");
+    let ingredientesReceta = [];
 
     filas.forEach(fila => {
-        const select = fila.querySelector(".select-ing");
-        const inputCant = fila.querySelector(".input-cant");
-        if (select && inputCant) {
+        const select = fila.querySelector(".select-ingrediente");
+        const cantidadInput = fila.querySelector(".input-cantidad");
+
+        if (select.value && cantidadInput.value) {
             ingredientesReceta.push({
                 idIngrediente: select.value,
-                cantidad: parseFloat(inputCant.value) || 0
+                cantidad: parseFloat(cantidadInput.value)
             });
         }
     });
@@ -105,27 +119,37 @@ async function guardarReceta(e) {
         return;
     }
 
+    let imagenBase64 = "";
+    if (inputImagen.files && inputImagen.files[0]) {
+        try {
+            imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
+        } catch (err) {
+            console.error("Error al procesar imagen:", err);
+        }
+    }
+
+    const idReceta = nombre.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "_");
+
     try {
         mensajeForm.textContent = "Guardando receta en Firebase...";
         mensajeForm.classList.remove("hidden", "text-red-600");
         mensajeForm.classList.add("text-emerald-600");
 
-        // Procesar imagen si existe
-        const imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
-
-        // ID único amigable para la receta
-        const idReceta = nombre.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9]/g, "_");
-
-        await setDoc(doc(db, "recetas", idReceta), {
+        const datosReceta = {
             nombre,
             porciones,
-            imagen: imagenBase64,
             ingredientes: ingredientesReceta
-        });
+        };
 
-        mensajeForm.textContent = `¡Receta "${nombre}" guardada con éxito!`;
+        if (imagenBase64) {
+            datosReceta.imagen = imagenBase64;
+        }
+
+        await setDoc(doc(db, "recetas", idReceta), datosReceta, { merge: true });
+
+        mensajeForm.textContent = "¡Menú / Receta guardada con éxito!";
         formReceta.reset();
         contenedorIngredientes.innerHTML = "";
         agregarFilaIngrediente();
@@ -135,8 +159,8 @@ async function guardarReceta(e) {
         }, 4000);
 
     } catch (error) {
-        console.error("Error al guardar la receta:", error);
-        mensajeForm.textContent = "Error al grabar en la base de datos.";
+        console.error("Error al guardar receta:", error);
+        mensajeForm.textContent = "Error al guardar la receta en la base de datos.";
         mensajeForm.classList.remove("text-emerald-600");
         mensajeForm.classList.add("text-red-600");
     }
@@ -144,4 +168,4 @@ async function guardarReceta(e) {
 
 btnAgregarFila.addEventListener("click", agregarFilaIngrediente);
 formReceta.addEventListener("submit", guardarReceta);
-window.addEventListener("DOMContentLoaded", cargarIngredientesDisponibles);
+window.addEventListener("DOMContentLoaded", inicializarRecetasMenu);
