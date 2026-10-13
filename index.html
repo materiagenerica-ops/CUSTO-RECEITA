@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custo Receita - Calculadora y Estadísticas</title>
+    <title>Custo Receita - Calculadora de Costos</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
@@ -45,7 +45,7 @@
                     <img src="logotipoc.jpg" alt="Custo Receita Logo" class="h-12 w-auto object-contain">
                     <div>
                         <h1 class="text-xl font-bold text-slate-900 leading-tight">Custo Receita</h1>
-                        <p class="text-xs text-slate-500">Calculadora de Costos - Torres, RS (Brasil)</p>
+                        <p class="text-xs text-slate-500">Torres, RS (Brasil) - Calculadora de Costos</p>
                     </div>
                 </div>
                 <button id="btn-salir" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-700 text-xs font-semibold px-4 py-2 rounded-xl border border-slate-200 transition cursor-pointer">
@@ -75,118 +75,55 @@
             </nav>
         </div>
 
-        <!-- Contenido Principal -->
+        <!-- Contenido Principal de la Calculadora -->
         <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-8">
-            
-            <!-- Calculadora Principal -->
             <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <h2 class="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
-                    <span>🧮</span> Calculadora de Costos por Lote
+                    <span>🧮</span> Calculadora de Costos por Porción y Lote
                 </h2>
-                <p class="text-xs text-slate-500 mb-6">Selecciona un plato del menú y calcula el costo total y unitario según el número de comensales.</p>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Seleccionar Plato del Menú</label>
-                        <select id="select-receta" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="">-- Cargando platos... --</option>
+                <p class="text-xs text-slate-500 mb-6">Selecciona un menú tipo registrado y calcula el costo total en Reales (BRL) adaptado al número de comensales.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Seleccionar Menú Tipo</label>
+                        <select id="calc-select-receta" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="">-- Cargando menús... --</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Cantidad de Comensales</label>
-                        <input type="number" id="input-comensales" min="1" value="10" 
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Cantidad de Comensales (Lote)</label>
+                        <input type="number" id="calc-comensales" min="1" value="10" 
                             class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                 </div>
 
-                <button id="btn-calcular" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl text-sm transition shadow-sm cursor-pointer">
-                    Calcular Costos del Plato
-                </button>
-                <p id="mensaje-estado" class="text-xs text-slate-400 mt-2 text-center"></p>
-            </section>
-
-            <!-- Resultado del Cálculo -->
-            <section id="resultado-container" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hidden space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
-                    <div class="flex items-center gap-4">
-                        <div id="imagen-receta-container" class="hidden">
-                            <img id="receta-foto" src="" alt="Plato" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-xs">
+                <div id="resultado-calculadora" class="hidden space-y-4 border-t border-slate-100 pt-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                            <p class="text-xs text-emerald-700 font-medium mb-1">Costo Total del Lote</p>
+                            <p id="costo-total-lote" class="text-2xl font-bold text-emerald-800">R$ 0,00</p>
                         </div>
-                        <div>
-                            <h3 id="receta-nombre" class="text-lg font-bold text-slate-900">Nombre del Plato</h3>
-                            <p class="text-xs text-slate-500">Cálculo exacto para un lote de <span id="label-cant-comensales" class="font-semibold text-slate-700">10</span> comensales</p>
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                            <p class="text-xs text-slate-600 font-medium mb-1">Costo por Porción (Comensal)</p>
+                            <p id="costo-porcion" class="text-2xl font-bold text-slate-900">R$ 0,00</p>
                         </div>
                     </div>
-                    <div class="flex gap-4">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
-                            <p class="text-[11px] text-slate-500 font-medium">Costo por Porción</p>
-                            <p id="costo-unitario" class="text-base font-bold text-slate-800">R$ 0.00</p>
-                        </div>
-                        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-center">
-                            <p class="text-[11px] text-emerald-700 font-medium">Costo Total Lote</p>
-                            <p id="costo-total" class="text-base font-bold text-emerald-700">R$ 0.00</p>
-                        </div>
+
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl mt-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs">
+                                    <th class="py-2 px-3">Ingrediente</th>
+                                    <th class="py-2 px-3">Cant. Lote</th>
+                                    <th class="py-2 px-3">Precio Ref. Insumo</th>
+                                    <th class="py-2 px-3 text-right">Costo Parcial (R$)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-detalle-calculo" class="divide-y divide-slate-100 text-sm">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-
-                <!-- Detalle de Ingredientes -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-slate-500 text-xs">
-                                <th class="py-2 px-3">Ingrediente</th>
-                                <th class="py-2 px-3">Cantidad Requerida (<span id="txt-lote-comensales">10</span> comensales)</th>
-                                <th class="py-2 px-3">Precio Ref.</th>
-                                <th class="py-2 px-3 text-right">Costo Parcial (R$)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-ingredientes-cuerpo" class="divide-y divide-slate-100 text-sm">
-                            <!-- Dinámico -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Registro en Estadísticas -->
-                <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <label class="text-xs font-medium text-slate-600 whitespace-nowrap">Fecha de Producción:</label>
-                        <input type="date" id="input-fecha" class="border border-slate-300 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div class="w-full sm:w-auto flex items-center gap-3">
-                        <p id="mensaje-registro" class="text-xs font-medium text-emerald-600 hidden"></p>
-                        <button type="button" id="btn-registrar" class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-5 py-2.5 rounded-xl transition shadow-sm cursor-pointer">
-                            📊 Registrar en Histórico Estadístico
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Histórico Estadístico -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                        <span>📈</span> Histórico Estadístico de Producción
-                    </h2>
-                    <span id="total-historico" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                        Total Acumulado: R$ 0.00
-                    </span>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-slate-500 text-xs">
-                                <th class="py-2 px-3">Fecha</th>
-                                <th class="py-2 px-3">Plato Preparado</th>
-                                <th class="py-2 px-3">Comensales</th>
-                                <th class="py-2 px-3 text-right">Costo Total (R$)</th>
-                                <th class="py-2 px-3 text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-historico-cuerpo" class="divide-y divide-slate-100 text-sm">
-                            <!-- Dinámico -->
-                        </tbody>
-                    </table>
                 </div>
             </section>
         </main>
@@ -197,29 +134,156 @@
         </footer>
     </div>
 
-    <!-- MODAL DE EDICIÓN DE FECHA EN HISTÓRICO -->
-    <div id="modal-editar-historico" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 hidden">
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 max-w-sm w-full space-y-4">
-            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span>✏️</span> Modificar Fecha de Registro
-            </h3>
-            <p id="modal-plato-info" class="text-xs text-slate-500"></p>
-            <input type="hidden" id="modal-id-registro">
-            <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Nueva Fecha</label>
-                <input type="date" id="modal-input-fecha" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" id="modal-btn-cancelar" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-xl text-xs transition cursor-pointer">
-                    Cancelar
-                </button>
-                <button type="button" id="modal-btn-guardar" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-xl text-xs transition shadow-sm cursor-pointer">
-                    Guardar Cambios
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Firebase y Lógica de Cálculo con Normalización de Unidades -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <script type="module" src="app.js"></script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
+            authDomain: "gastos-culinarios.firebaseapp.com",
+            projectId: "gastos-culinarios",
+            storageBucket: "gastos-culinarios.firebasestorage.app",
+            messagingSenderId: "789890363262",
+            appId: "1:789890363262:web:044439da8398e5c0484d2f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.intentarLogin = function(e) {
+            e.preventDefault();
+            const usuario = document.getElementById("login-usuario").value.trim();
+            const password = document.getElementById("login-password").value.trim();
+            const loginError = document.getElementById("login-error");
+
+            if (usuario === "DRPEREYRA" && password === "235689") {
+                sessionStorage.setItem("auth_custo", "true");
+                document.getElementById("login-container").classList.add("hidden");
+                document.getElementById("app-container").classList.remove("hidden");
+                inicializarCalculadora();
+            } else {
+                loginError.classList.remove("hidden");
+            }
+        };
+
+        function verificarSesion() {
+            if (sessionStorage.getItem("auth_custo") === "true") {
+                document.getElementById("login-container").classList.add("hidden");
+                document.getElementById("app-container").classList.remove("hidden");
+                inicializarCalculadora();
+            }
+        }
+
+        const btnSalir = document.getElementById("btn-salir");
+        if (btnSalir) {
+            btnSalir.addEventListener("click", () => {
+                sessionStorage.removeItem("auth_custo");
+                window.location.reload();
+            });
+        }
+
+        let cacheIngredientes = {};
+        let cacheRecetas = {};
+
+        async function inicializarCalculadora() {
+            try {
+                // Cargar ingredientes a memoria
+                const snapIng = await getDocs(collection(db, "ingredientes"));
+                cacheIngredientes = {};
+                snapIng.forEach(docSnap => {
+                    cacheIngredientes[docSnap.id] = docSnap.data();
+                });
+
+                // Cargar recetas a memoria
+                const snapRecetas = await getDocs(collection(db, "recetas"));
+                cacheRecetas = {};
+                const selectReceta = document.getElementById("calc-select-receta");
+                selectReceta.innerHTML = '<option value="">-- Seleccione un menú --</option>';
+
+                snapRecetas.forEach(docSnap => {
+                    const data = docSnap.data();
+                    cacheRecetas[docSnap.id] = data;
+                    const opt = document.createElement("option");
+                    opt.value = docSnap.id;
+                    opt.textContent = `${data.nombre} (Base: ${data.porciones} porciones)`;
+                    selectReceta.appendChild(opt);
+                });
+
+            } catch (error) {
+                console.error("Error al inicializar datos:", error);
+            }
+        }
+
+        const selectReceta = document.getElementById("calc-select-receta");
+        const inputComensales = document.getElementById("calc-comensales");
+
+        if (selectReceta) selectReceta.addEventListener("change", realizarCalculo);
+        if (inputComensales) inputComensales.addEventListener("input", realizarCalculo);
+
+        // FUNCIÓN DE CONVERSIÓN Y CÁLCULO NORMALIZADO
+        function realizarCalculo() {
+            const recetaId = selectReceta.value;
+            const comensalesDeseados = parseInt(inputComensales.value) || 1;
+            const contenedorResultado = document.getElementById("resultado-calculadora");
+
+            if (!recetaId || !cacheRecetas[recetaId]) {
+                contenedorResultado.classList.add("hidden");
+                return;
+            }
+
+            const receta = cacheRecetas[recetaId];
+            const porcionesBase = receta.porciones || 1;
+            const escala = comensalesDeseados / porcionesBase;
+
+            let costoTotalLote = 0;
+            const tablaDetalle = document.getElementById("tabla-detalle-calculo");
+            tablaDetalle.innerHTML = "";
+
+            if (receta.ingredientes) {
+                receta.ingredientes.forEach(ing => {
+                    const infoIng = cacheIngredientes[ing.idIngrediente];
+                    const nombreIng = infoIng ? infoIng.nombre : ing.idIngrediente;
+                    const precioBaseInsumo = infoIng ? Number(infoIng.precio) || 0 : 0;
+                    const unidadBaseInsumo = infoIng ? (infoIng.unidad || 'kg').toLowerCase() : 'kg';
+                    
+                    const cantidadBaseReceta = Number(ing.cantidad) || 0;
+                    const unidadReceta = (ing.unidad || unidadBaseInsumo).toLowerCase();
+
+                    // Cantidad ajustada según los comensales solicitados
+                    let cantidadLote = cantidadBaseReceta * escala;
+
+                    // NORMALIZACIÓN MATEMÁTICA DE UNIDADES (Evita el error de calcular gramos como kilogramos)
+                    let factorConversion = 1;
+                    if ((unidadBaseInsumo === 'kg' || unidadBaseInsumo === 'kilogramos') && (unidadReceta === 'g' || unidadReceta === 'gramos')) {
+                        factorConversion = 1 / 1000;
+                    } else if ((unidadBaseInsumo === 'l' || unidadBaseInsumo === 'litros') && (unidadReceta === 'ml' || unidadReceta === 'mililitros')) {
+                        factorConversion = 1 / 1000;
+                    }
+
+                    // Costo parcial = (Cantidad en lote ajustada * Factor de conversión) * Precio unitario base en BRL
+                    const costoParcial = (cantidadLote * factorConversion) * precioBaseInsumo;
+                    costoTotalLote += costoParcial;
+
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 font-medium text-slate-800">${nombreIng}</td>
+                        <td class="py-2.5 px-3 text-slate-600">${cantidadLote.toFixed(2)} ${unidadReceta}</td>
+                        <td class="py-2.5 px-3 text-slate-500">R$ ${precioBaseInsumo.toFixed(2)} / ${unidadBaseInsumo}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-slate-900">R$ ${costoParcial.toFixed(2)}</td>
+                    `;
+                    tablaDetalle.appendChild(tr);
+                });
+            }
+
+            const costoPorPorcion = costoTotalLote / comensalesDeseados;
+
+            document.getElementById("costo-total-lote").textContent = `R$ ${costoTotalLote.toFixed(2)}`;
+            document.getElementById("costo-porcion").textContent = `R$ ${costoPorPorcion.toFixed(2)}`;
+            contenedorResultado.classList.remove("hidden");
+        }
+
+        verificarSesion();
+    </script>
 </body>
 </html>
