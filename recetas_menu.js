@@ -23,7 +23,6 @@ const contenedorIngredientes = document.getElementById("contenedor-ingredientes"
 const btnAgregarFila = document.getElementById("btn-agregar-fila");
 const mensajeForm = document.getElementById("mensaje-form");
 
-// Cargar ingredientes desde Firebase para armar las opciones
 async function inicializarRecetasMenu() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
@@ -45,7 +44,7 @@ async function inicializarRecetasMenu() {
     }
 }
 
-// Agregar fila de ingrediente con indicador automático de su unidad
+// Agregar fila permitiendo alternar entre unidades (ej. kg -> gramos)
 function agregarFilaIngrediente() {
     const div = document.createElement("div");
     div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200";
@@ -59,21 +58,37 @@ function agregarFilaIngrediente() {
         <select class="select-ingrediente flex-grow border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
             ${optionsHtml}
         </select>
-        <div class="flex items-center gap-1.5 w-40">
+        <div class="flex items-center gap-1.5 w-48">
             <input type="number" step="any" min="0.001" placeholder="Cant." class="input-cantidad w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <span class="span-unidad text-xs font-bold text-slate-500 w-16 whitespace-nowrap">-</span>
+            <select class="select-unidad-receta border border-slate-300 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">-</option>
+            </select>
         </div>
         <button type="button" class="btn-eliminar-fila text-slate-400 hover:text-red-600 text-sm px-2 py-1 font-bold cursor-pointer">✕</button>
     `;
 
     const selectIng = div.querySelector(".select-ingrediente");
-    const spanUnidad = div.querySelector(".span-unidad");
+    const selectUnidadReceta = div.querySelector(".select-unidad-receta");
 
-    // Al cambiar el ingrediente, actualizar dinámicamente la etiqueta de la unidad
     selectIng.addEventListener("change", (e) => {
         const selectedOption = e.target.options[e.target.selectedIndex];
-        const unidad = selectedOption.dataset.unidad || "-";
-        spanUnidad.textContent = unidad;
+        const unidadBase = selectedOption.dataset.unidad || "";
+        
+        selectUnidadReceta.innerHTML = "";
+
+        if (unidadBase === "kg") {
+            selectUnidadReceta.innerHTML = `
+                <option value="kg">kg</option>
+                <option value="g" selected>g (gramos)</option>
+            `;
+        } else if (unidadBase === "litro") {
+            selectUnidadReceta.innerHTML = `
+                <option value="litro">litros</option>
+                <option value="ml" selected>ml (mililitros)</option>
+            `;
+        } else {
+            selectUnidadReceta.innerHTML = `<option value="${unidadBase}">${unidadBase}</option>`;
+        }
     });
 
     div.querySelector(".btn-eliminar-fila").addEventListener("click", () => {
@@ -83,7 +98,6 @@ function agregarFilaIngrediente() {
     contenedorIngredientes.appendChild(div);
 }
 
-// Convertir imagen seleccionada a Base64
 function convertirImagenABase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -93,7 +107,6 @@ function convertirImagenABase64(file) {
     });
 }
 
-// Guardar receta en Firebase
 async function guardarReceta(e) {
     e.preventDefault();
     const nombre = inputNombre.value.trim();
@@ -105,11 +118,21 @@ async function guardarReceta(e) {
     filas.forEach(fila => {
         const select = fila.querySelector(".select-ingrediente");
         const cantidadInput = fila.querySelector(".input-cantidad");
+        const selectUnidad = fila.querySelector(".select-unidad-receta");
 
         if (select.value && cantidadInput.value) {
+            let cantidadIngresada = parseFloat(cantidadInput.value);
+            let unidadElegida = selectUnidad.value;
+
+            // Normalizar a unidad base (kg o litro) si se ingresó en gramos o mililitros
+            let cantidadFinal = cantidadIngresada;
+            if (unidadElegida === "g" || unidadElegida === "ml") {
+                cantidadFinal = cantidadIngresada / 1000;
+            }
+
             ingredientesReceta.push({
                 idIngrediente: select.value,
-                cantidad: parseFloat(cantidadInput.value)
+                cantidad: cantidadFinal // Se almacena normalizado en la unidad principal del insumo
             });
         }
     });
