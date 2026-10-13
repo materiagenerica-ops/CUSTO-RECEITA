@@ -75,25 +75,28 @@ async function cargarIngredientesSelect() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
         ingredientesDisponibles = [];
-        selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
+        if (selectIngrediente) {
+            selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
 
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const item = { id: docSnap.id, ...data };
-            ingredientesDisponibles.push(item);
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const item = { id: docSnap.id, ...data };
+                ingredientesDisponibles.push(item);
 
-            const opt = document.createElement("option");
-            opt.value = item.id;
-            opt.textContent = `${item.nombre} (${item.unidad})`;
-            selectIngrediente.appendChild(opt);
-        });
+                const opt = document.createElement("option");
+                opt.value = item.id;
+                opt.textContent = `${item.nombre} (${item.unidad})`;
+                selectIngrediente.appendChild(opt);
+            });
+        }
     } catch (error) {
         console.error("Error al cargar ingredientes:", error);
     }
 }
 
 if (btnAgregarIng) {
-    btnAgregarIng.addEventListener("click", () => {
+    btnAgregarIng.addEventListener("click", (e) => {
+        e.preventDefault();
         const idIngrediente = selectIngrediente.value;
         const cantidad = Number(String(inputCantidadIng.value).replace(',', '.')) || 0;
 
@@ -116,6 +119,7 @@ if (btnAgregarIng) {
 }
 
 function renderizarTablaIngredientesReceta() {
+    if (!tablaIngredientesReceta) return;
     tablaIngredientesReceta.innerHTML = "";
     if (ingredientesSeleccionados.length === 0) {
         tablaIngredientesReceta.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados.</td></tr>`;
@@ -179,6 +183,7 @@ async function guardarReceta(e) {
 async function cargarRecetas() {
     try {
         const querySnapshot = await getDocs(collection(db, "recetas"));
+        if (!contenedorTarjetas) return;
         contenedorTarjetas.innerHTML = "";
 
         if (querySnapshot.empty) {
