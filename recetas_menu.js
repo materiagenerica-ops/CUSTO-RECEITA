@@ -13,9 +13,43 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Control de sesión global para el script
+window.intentarLogin = function(e) {
+    e.preventDefault();
+    const usuario = document.getElementById("login-usuario").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+    const loginError = document.getElementById("login-error");
+
+    if (usuario === "DRPEREYRA" && password === "235689") {
+        sessionStorage.setItem("auth_custo", "true");
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("app-container").classList.remove("hidden");
+        inicializarModulo();
+    } else {
+        loginError.classList.remove("hidden");
+    }
+};
+
+function verificarSesion() {
+    if (sessionStorage.getItem("auth_custo") === "true") {
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("app-container").classList.remove("hidden");
+        inicializarModulo();
+    }
+}
+
+const btnSalir = document.getElementById("btn-salir");
+if (btnSalir) {
+    btnSalir.addEventListener("click", () => {
+        sessionStorage.removeItem("auth_custo");
+        window.location.reload();
+    });
+}
+
 let ingredientesDisponibles = [];
 let ingredientesSeleccionados = [];
 
+// Elementos del DOM
 const formReceta = document.getElementById("form-receta");
 const inputNombre = document.getElementById("receta-nombre");
 const inputPorciones = document.getElementById("receta-porciones");
@@ -43,6 +77,7 @@ async function cargarIngredientesSelect() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
         ingredientesDisponibles = [];
+        
         if (selectIngrediente) {
             selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
 
@@ -62,20 +97,26 @@ async function cargarIngredientesSelect() {
     }
 }
 
+// Evento directo para agregar ingrediente a la tabla temporal
 if (btnAgregarIng) {
     btnAgregarIng.addEventListener("click", (e) => {
-        e.preventDefault(); // Evita cualquier comportamiento de formulario por defecto
-        
+        e.preventDefault();
+
+        if (!selectIngrediente || !inputCantidadIng) {
+            alert("Error: Faltan elementos en el formulario.");
+            return;
+        }
+
         const idIngrediente = selectIngrediente.value;
         const cantidadStr = inputCantidadIng.value.trim().replace(',', '.');
         const cantidad = Number(cantidadStr);
 
         if (!idIngrediente) {
-            alert("Por favor, seleccione un ingrediente.");
+            alert("Por favor, seleccione un ingrediente de la lista.");
             return;
         }
         if (isNaN(cantidad) || cantidad <= 0) {
-            alert("Por favor, ingrese una cantidad válida mayor a 0.");
+            alert("Por favor, ingrese una cantidad numérica válida mayor a 0.");
             return;
         }
 
@@ -85,7 +126,7 @@ if (btnAgregarIng) {
             return;
         }
 
-        // Verificar si ya fue agregado para actualizar o sumar
+        // Verificar si ya fue agregado para actualizarlo o sumarlo
         const existente = ingredientesSeleccionados.find(i => i.idIngrediente === idIngrediente);
         if (existente) {
             existente.cantidad = cantidad;
@@ -98,8 +139,10 @@ if (btnAgregarIng) {
             });
         }
 
+        // Limpiar campos de insumo
         inputCantidadIng.value = "";
         selectIngrediente.value = "";
+        
         renderizarTablaIngredientesReceta();
     });
 }
@@ -321,4 +364,4 @@ if (formReceta) {
     formReceta.addEventListener("submit", guardarReceta);
 }
 
-window.addEventListener("DOMContentLoaded", inicializarModulo);
+verificarSesion();
