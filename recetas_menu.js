@@ -31,14 +31,12 @@ const tablaRecetasAdmin = document.getElementById("tabla-recetas-admin");
 
 async function inicializarRecetasMenu() {
     try {
-        // 1. Cargar Insumos
         const qIng = await getDocs(collection(db, "ingredientes"));
         cacheIngredientes = {};
         qIng.forEach((docSnap) => {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Cargar Recetas para la tabla de administración
         await cargarRecetasAdmin();
 
         if (Object.keys(cacheIngredientes).length === 0) {
@@ -62,7 +60,7 @@ async function cargarRecetasAdmin() {
         cacheRecetasAdmin = [];
 
         if (querySnapshot.empty) {
-            tablaRecetasAdmin.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 text-xs">No hay menús registrados todavía.</td></tr>`;
+            tablaRecetasAdmin.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400 text-xs">No hay menús registrados todavía.</td></tr>`;
             return;
         }
 
@@ -71,7 +69,6 @@ async function cargarRecetasAdmin() {
             const id = docSnap.id;
             cacheRecetasAdmin.push({ id, ...data });
 
-            // Formatear lista de ingredientes para mostrar resumen en la tabla
             let resumenIngredientes = data.ingredientes.map(item => {
                 const ing = cacheIngredientes[item.idIngrediente];
                 const nombreIng = ing ? ing.nombre : "Insumo";
@@ -89,8 +86,15 @@ async function cargarRecetasAdmin() {
                 return `<span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs mr-1 mb-1">${nombreIng}: ${cantidadMostrar} ${unidadMostrar}</span>`;
             }).join("");
 
+            // Miniatura de imagen o icono por defecto
+            let htmlImagen = `<div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-lg border border-slate-200">🍽️</div>`;
+            if (data.imagen) {
+                htmlImagen = `<img src="${data.imagen}" alt="${data.nombre}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-xs">`;
+            }
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
+                <td class="py-3 px-3">${htmlImagen}</td>
                 <td class="py-3 px-3 font-medium text-slate-800">${data.nombre}</td>
                 <td class="py-3 px-3 text-slate-600">${data.porciones} porciones</td>
                 <td class="py-3 px-3 max-w-xs">${resumenIngredientes}</td>
@@ -108,7 +112,6 @@ async function cargarRecetasAdmin() {
             tablaRecetasAdmin.appendChild(tr);
         });
 
-        // Eventos Editar
         document.querySelectorAll(".btn-editar-receta").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const id = e.currentTarget.dataset.id;
@@ -116,7 +119,6 @@ async function cargarRecetasAdmin() {
             });
         });
 
-        // Eventos Eliminar
         document.querySelectorAll(".btn-eliminar-receta").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const id = e.currentTarget.dataset.id;
@@ -139,7 +141,6 @@ function agregarFilaIngrediente(ingredienteSeleccionado = "", cantidadValor = ""
         optionsHtml += `<option value="${id}" data-unidad="${data.unidad || 'kg'}" ${selected}>${data.nombre} (${data.unidad || 'kg'})</option>`;
     }
 
-    // Calcular si se debe mostrar en gramos/ml o unidad principal según el valor almacenado
     let valInput = cantidadValor;
     let unidadInicialSeleccionada = "kg";
 
@@ -295,12 +296,17 @@ async function guardarReceta(e) {
     }
 
     let imagenBase64 = "";
+    const recetaExistente = cacheRecetasAdmin.find(r => r.id === idExistente);
+
     if (inputImagen && inputImagen.files && inputImagen.files[0]) {
         try {
             imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
         } catch (err) {
             console.error("Error al procesar imagen:", err);
         }
+    } else if (recetaExistente && recetaExistente.imagen) {
+        // Mantener la imagen anterior si no se seleccionó una nueva al editar
+        imagenBase64 = recetaExistente.imagen;
     }
 
     const idReceta = idExistente ? idExistente : nombre.toLowerCase()
