@@ -112,7 +112,7 @@
                     <!-- Sección para agregar ingredientes -->
                     <div>
                         <h3 class="text-sm font-bold text-slate-800 mb-3">Ingredientes del Plato</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3 items-end">
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-medium text-slate-600 mb-1">Seleccionar Insumo</label>
                                 <select id="select-ingrediente" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
@@ -120,19 +120,9 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Cantidad</label>
-                                <input type="number" id="input-cantidad-ing" step="any" placeholder="Ej. 500 o 1.5" 
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Cantidad Base</label>
+                                <input type="number" id="input-cantidad-ing" step="any" placeholder="Ej. 1.5 o 500" 
                                     class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Unidad de Medida</label>
-                                <select id="select-unidad-ing" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                    <option value="gramos">gramos (g)</option>
-                                    <option value="kg">kilogramos (kg)</option>
-                                    <option value="mililitros">mililitros (ml)</option>
-                                    <option value="litros">litros (L)</option>
-                                    <option value="unidades">unidades (un)</option>
-                                </select>
                             </div>
                         </div>
 
@@ -146,7 +136,7 @@
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs">
                                         <th class="py-2 px-3">Insumo</th>
-                                        <th class="py-2 px-3">Cantidad y Unidad</th>
+                                        <th class="py-2 px-3">Cantidad</th>
                                         <th class="py-2 px-3 text-right">Acción</th>
                                     </tr>
                                 </thead>
