@@ -265,25 +265,28 @@ async function cargarHistoricoEstadisticas() {
 
         totalHistoricoSpan.textContent = `Total Acumulado: R$ ${acumuladoTotal.toFixed(2)}`;
 
-        // Activar botones de eliminar en el histórico
-        document.querySelectorAll(".btn-eliminar-historico").forEach(btn => {
-            btn.addEventListener("click", async (e) => {
-                const idRegistro = e.currentTarget.dataset.id;
-                if (confirm("¿Estás seguro de que deseas eliminar este registro histórico?")) {
-                    try {
-                        await deleteDoc(doc(db, "produccion_historico", idRegistro));
-                        await cargarHistoricoEstadisticas();
-                    } catch (err) {
-                        console.error("Error al eliminar registro histórico:", err);
-                        alert("No se pudo eliminar el registro.");
-                    }
-                }
-            });
-        });
-
     } catch (error) {
         console.error("Error al cargar histórico:", error);
     }
+}
+
+// Delegación de eventos global para asegurar que el botón Eliminar responda siempre
+if (tablaHistoricoCuerpo) {
+    tablaHistoricoCuerpo.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".btn-eliminar-historico");
+        if (!btn) return;
+
+        const idRegistro = btn.dataset.id;
+        if (confirm("¿Estás seguro de que deseas eliminar este registro histórico?")) {
+            try {
+                await deleteDoc(doc(db, "produccion_historico", idRegistro));
+                await cargarHistoricoEstadisticas();
+            } catch (err) {
+                console.error("Error al eliminar registro histórico:", err);
+                alert("No se pudo eliminar el registro.");
+            }
+        }
+    });
 }
 
 if (btnCalcular) btnCalcular.addEventListener("click", calcularCostoReceta);
