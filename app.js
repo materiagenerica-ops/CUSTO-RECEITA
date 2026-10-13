@@ -229,5 +229,5 @@ async function cargarHistoricoEstadisticas() {
 btnCalcular.addEventListener("click", calcularCostoReceta);
 btnRegistrar.addEventListener("click", registrarEstadistica);
 
-// Verificar sesión al cargar la página
-window.addEventListener("DOMContentLoaded", verificarSesion);
+// Ejecutar verificación de sesión inmediatamente al cargar el módulo
+verificarSesion();
