@@ -54,9 +54,9 @@ const inputPorciones = document.getElementById("receta-porciones");
 const inputImagen = document.getElementById("receta-imagen");
 const selectIngrediente = document.getElementById("select-ingrediente");
 const inputCantidadIng = document.getElementById("input-cantidad-ing");
+const selectUnidadIng = document.getElementById("select-unidad-ing");
 const btnAgregarIng = document.getElementById("btn-agregar-ing");
 const tablaIngredientesReceta = document.getElementById("tabla-ingredientes-receta");
-const mensajeReceta = document.getElementById("mensaje-receta");
 const contenedorTarjetas = document.getElementById("contenedor-tarjetas-recetas");
 const inputRecetaId = document.getElementById("receta-id-oculto");
 const tituloFormReceta = document.getElementById("titulo-form-receta");
@@ -85,7 +85,7 @@ async function cargarIngredientesSelect() {
 
                 const opt = document.createElement("option");
                 opt.value = item.id;
-                opt.textContent = `${item.nombre} (${item.unidad})`;
+                opt.textContent = `${item.nombre} (Base: ${item.unidad || 'kg'})`;
                 selectIngrediente.appendChild(opt);
             });
         }
@@ -94,11 +94,24 @@ async function cargarIngredientesSelect() {
     }
 }
 
+// Auto-seleccionar la unidad predeterminada del insumo si se desea
+if (selectIngrediente) {
+    selectIngrediente.addEventListener("change", () => {
+        const idIngrediente = selectIngrediente.value;
+        if (!idIngrediente) return;
+        const ingInfo = ingredientesDisponibles.find(i => i.id === idIngrediente);
+        if (ingInfo && ingInfo.unidad && selectUnidadIng) {
+            selectUnidadIng.value = ingInfo.unidad;
+        }
+    });
+}
+
 if (btnAgregarIng) {
     btnAgregarIng.addEventListener("click", (e) => {
         e.preventDefault();
         const idIngrediente = selectIngrediente.value;
         const cantidad = Number(String(inputCantidadIng.value).replace(',', '.')) || 0;
+        const unidadMedida = selectUnidadIng ? selectUnidadIng.value : 'gramos';
 
         if (!idIngrediente || cantidad <= 0) return;
 
@@ -108,7 +121,7 @@ if (btnAgregarIng) {
         ingredientesSeleccionados.push({
             idIngrediente,
             nombre: ingInfo.nombre,
-            unidad: ingInfo.unidad,
+            unidad: unidadMedida,
             cantidad
         });
 
@@ -169,7 +182,8 @@ async function guardarReceta(e) {
             imagen,
             ingredientes: ingredientesSeleccionados.map(i => ({
                 idIngrediente: i.idIngrediente,
-                cantidad: i.cantidad
+                cantidad: i.cantidad,
+                unidad: i.unidad
             }))
         }, { merge: true });
 
@@ -205,7 +219,7 @@ async function cargarRecetas() {
                 data.ingredientes.forEach(ing => {
                     const infoIng = ingredientesDisponibles.find(i => i.id === ing.idIngrediente);
                     const nombreIng = infoIng ? infoIng.nombre : ing.idIngrediente;
-                    const unidadIng = infoIng ? infoIng.unidad : '';
+                    const unidadIng = ing.unidad || (infoIng ? infoIng.unidad : '');
                     listaHtml += `<li>• ${nombreIng}: <strong>${ing.cantidad} ${unidadIng}</strong></li>`;
                 });
             }
