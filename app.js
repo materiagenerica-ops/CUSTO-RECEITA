@@ -270,7 +270,6 @@ async function cargarHistoricoEstadisticas() {
     }
 }
 
-// Delegación de eventos global para asegurar que el botón Eliminar responda siempre
 if (tablaHistoricoCuerpo) {
     tablaHistoricoCuerpo.addEventListener("click", async (e) => {
         const btn = e.target.closest(".btn-eliminar-historico");
