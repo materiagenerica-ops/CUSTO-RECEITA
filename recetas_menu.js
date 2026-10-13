@@ -105,12 +105,18 @@ if (btnAgregarIng) {
         const ingInfo = ingredientesDisponibles.find(i => i.id === idIngrediente);
         if (!ingInfo) return;
 
-        ingredientesSeleccionados.push({
-            idIngrediente,
-            nombre: ingInfo.nombre,
-            unidad: ingInfo.unidad,
-            cantidad
-        });
+        // Validar si ya fue agregado para sumar o registrar limpiamente
+        const existente = ingredientesSeleccionados.find(i => i.idIngrediente === idIngrediente);
+        if (existente) {
+            existente.cantidad += cantidad;
+        } else {
+            ingredientesSeleccionados.push({
+                idIngrediente,
+                nombre: ingInfo.nombre,
+                unidad: ingInfo.unidad,
+                cantidad
+            });
+        }
 
         inputCantidadIng.value = "";
         selectIngrediente.value = "";
