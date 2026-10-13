@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCzhFi83TQYmKjZjtHqBZzVRN-GlXyUjvo",
@@ -13,269 +13,135 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.intentarLogin = function(e) {
-    e.preventDefault();
-    const usuario = document.getElementById("login-usuario").value.trim();
-    const password = document.getElementById("login-password").value.trim();
-    const loginError = document.getElementById("login-error");
-
-    if (usuario === "DRPEREYRA" && password === "235689") {
-        sessionStorage.setItem("auth_custo", "true");
-        document.getElementById("login-container").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        inicializarModulo();
-    } else {
-        loginError.classList.remove("hidden");
-    }
-};
-
-function verificarSesion() {
-    if (sessionStorage.getItem("auth_custo") === "true") {
-        document.getElementById("login-container").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        inicializarModulo();
-    }
-}
-
-const btnSalir = document.getElementById("btn-salir");
-if (btnSalir) {
-    btnSalir.addEventListener("click", () => {
-        sessionStorage.removeItem("auth_custo");
-        window.location.reload();
-    });
-}
-
-let ingredientesDisponibles = [];
-let ingredientesSeleccionados = [];
+let listaIngredientesGlobal = [];
 
 const formReceta = document.getElementById("form-receta");
 const inputNombre = document.getElementById("receta-nombre");
 const inputPorciones = document.getElementById("receta-porciones");
 const inputImagen = document.getElementById("receta-imagen");
-const selectIngrediente = document.getElementById("select-ingrediente");
-const inputCantidadIng = document.getElementById("input-cantidad-ing");
-const btnAgregarIng = document.getElementById("btn-agregar-ing");
-const tablaIngredientesReceta = document.getElementById("tabla-ingredientes-receta");
-const mensajeReceta = document.getElementById("mensaje-receta");
-const contenedorTarjetas = document.getElementById("contenedor-tarjetas-recetas");
-const inputRecetaId = document.getElementById("receta-id-oculto");
-const tituloFormReceta = document.getElementById("titulo-form-receta");
-const btnCancelarEdicion = document.getElementById("btn-cancelar-edicion-receta");
+const contenedorIngredientes = document.getElementById("contenedor-ingredientes");
+const btnAgregarFila = document.getElementById("btn-agregar-fila");
+const mensajeForm = document.getElementById("mensaje-form");
 
-async function inicializarModulo() {
-    try {
-        await cargarIngredientesSelect();
-        await cargarRecetas();
-    } catch (error) {
-        console.error("Error al inicializar el módulo:", error);
-    }
-}
-
-async function cargarIngredientesSelect() {
+// Cargar ingredientes disponibles desde Firebase para poblar los selectores del formulario
+async function cargarIngredientesDisponibles() {
     try {
         const querySnapshot = await getDocs(collection(db, "ingredientes"));
-        ingredientesDisponibles = [];
-        if (selectIngrediente) {
-            selectIngrediente.innerHTML = '<option value="">-- Seleccione un insumo --</option>';
-
-            querySnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const item = { id: docSnap.id, ...data };
-                ingredientesDisponibles.push(item);
-
-                const opt = document.createElement("option");
-                opt.value = item.id;
-                opt.textContent = `${item.nombre} (${item.unidad})`;
-                selectIngrediente.appendChild(opt);
-            });
+        listaIngredientesGlobal = [];
+        querySnapshot.forEach((docSnap) => {
+            listaIngredientesGlobal.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        
+        // Agregar la primera fila por defecto si hay ingredientes
+        if (listaIngredientesGlobal.length > 0) {
+            agregarFilaIngrediente();
+        } else {
+            contenedorIngredientes.innerHTML = '<p class="text-xs text-amber-600">Aún no hay insumos cargados. Ve a "Carga de Insumos" primero.</p>';
         }
     } catch (error) {
         console.error("Error al cargar ingredientes:", error);
     }
 }
 
-if (btnAgregarIng) {
-    btnAgregarIng.addEventListener("click", (e) => {
-        e.preventDefault();
-        const idIngrediente = selectIngrediente.value;
-        const cantidad = Number(String(inputCantidadIng.value).replace(',', '.')) || 0;
+// Añadir fila dinámica de ingrediente + cantidad
+function agregarFilaIngrediente() {
+    const div = document.createElement("div");
+    div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200";
+    
+    let optionsHtml = listaIngredientesGlobal.map(ing => `<option value="${ing.id}">${ing.nombre} (${ing.unidad})</option>`).join("");
 
-        if (!idIngrediente || cantidad <= 0) return;
+    div.innerHTML = `
+        <select class="select-ing flex-grow border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            ${optionsHtml}
+        </select>
+        <input type="number" step="any" placeholder="Cantidad total" class="input-cant w-32 border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+        <button type="button" class="btn-eliminar text-slate-400 hover:text-red-600 text-sm px-2 py-1 font-bold">✕</button>
+    `;
 
-        const ingInfo = ingredientesDisponibles.find(i => i.id === idIngrediente);
-        if (!ingInfo) return;
+    div.querySelector(".btn-eliminar").addEventListener("click", () => {
+        div.remove();
+    });
 
-        ingredientesSeleccionados.push({
-            idIngrediente,
-            nombre: ingInfo.nombre,
-            unidad: ingInfo.unidad,
-            cantidad
-        });
+    contenedorIngredientes.appendChild(div);
+}
 
-        inputCantidadIng.value = "";
-        selectIngrediente.value = "";
-        renderizarTablaIngredientesReceta();
+// Convertir archivo de imagen a Base64 para guardarlo directo en Firestore de forma simple
+function convertirImagenABase64(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) {
+            resolve("");
+            return;
+        }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
     });
 }
 
-function renderizarTablaIngredientesReceta() {
-    if (!tablaIngredientesReceta) return;
-    tablaIngredientesReceta.innerHTML = "";
-    if (ingredientesSeleccionados.length === 0) {
-        tablaIngredientesReceta.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-slate-400 text-xs">No hay ingredientes agregados.</td></tr>`;
-        return;
-    }
-
-    ingredientesSeleccionados.forEach((item, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td class="py-2.5 px-3 font-medium text-slate-800">${item.nombre}</td>
-            <td class="py-2.5 px-3 text-slate-600">${item.cantidad} ${item.unidad}</td>
-            <td class="py-2.5 px-3 text-right">
-                <button type="button" class="btn-quitar-ing text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 bg-red-50 rounded-lg border border-red-200 cursor-pointer" data-index="${index}">
-                    🗑️ Quitar
-                </button>
-            </td>
-        `;
-        tablaIngredientesReceta.appendChild(tr);
-    });
-
-    document.querySelectorAll(".btn-quitar-ing").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            const idx = parseInt(e.currentTarget.dataset.index);
-            ingredientesSeleccionados.splice(idx, 1);
-            renderizarTablaIngredientesReceta();
-        });
-    });
-}
-
+// Guardar Receta en Firebase
 async function guardarReceta(e) {
     e.preventDefault();
     const nombre = inputNombre.value.trim();
     const porciones = parseInt(inputPorciones.value) || 1;
-    const imagen = inputImagen.value.trim();
-    const idExistente = inputRecetaId.value;
 
-    if (!nombre || ingredientesSeleccionados.length === 0) return;
+    // Recolectar ingredientes de las filas dinámicas
+    const filas = contenedorIngredientes.querySelectorAll("div");
+    const ingredientesReceta = [];
 
-    const idReceta = idExistente ? idExistente : nombre.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]/g, "_");
+    filas.forEach(fila => {
+        const select = fila.querySelector(".select-ing");
+        const inputCant = fila.querySelector(".input-cant");
+        if (select && inputCant) {
+            ingredientesReceta.push({
+                idIngrediente: select.value,
+                cantidad: parseFloat(inputCant.value) || 0
+            });
+        }
+    });
+
+    if (ingredientesReceta.length === 0) {
+        alert("Debes agregar al menos un ingrediente a la receta.");
+        return;
+    }
 
     try {
+        mensajeForm.textContent = "Guardando receta en Firebase...";
+        mensajeForm.classList.remove("hidden", "text-red-600");
+        mensajeForm.classList.add("text-emerald-600");
+
+        // Procesar imagen si existe
+        const imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
+
+        // ID único amigable para la receta
+        const idReceta = nombre.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]/g, "_");
+
         await setDoc(doc(db, "recetas", idReceta), {
             nombre,
             porciones,
-            imagen,
-            ingredientes: ingredientesSeleccionados.map(i => ({
-                idIngrediente: i.idIngrediente,
-                cantidad: i.cantidad
-            }))
-        }, { merge: true });
+            imagen: imagenBase64,
+            ingredientes: ingredientesReceta
+        });
 
-        limpiarFormularioReceta();
-        await cargarRecetas();
+        mensajeForm.textContent = `¡Receta "${nombre}" guardada con éxito!`;
+        formReceta.reset();
+        contenedorIngredientes.innerHTML = "";
+        agregarFilaIngrediente();
+
+        setTimeout(() => {
+            mensajeForm.classList.add("hidden");
+        }, 4000);
+
     } catch (error) {
-        console.error("Error al guardar receta:", error);
+        console.error("Error al guardar la receta:", error);
+        mensajeForm.textContent = "Error al grabar en la base de datos.";
+        mensajeForm.classList.remove("text-emerald-600");
+        mensajeForm.classList.add("text-red-600");
     }
 }
 
-async function cargarRecetas() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "recetas"));
-        if (!contenedorTarjetas) return;
-        contenedorTarjetas.innerHTML = "";
-
-        if (querySnapshot.empty) {
-            contenedorTarjetas.innerHTML = `<p class="text-xs text-slate-400 text-center col-span-full py-4">No hay menús registrados.</p>`;
-            return;
-        }
-
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const id = docSnap.id;
-
-            const tarjeta = document.createElement("div");
-            tarjeta.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between space-y-4";
-            
-            let htmlImagen = data.imagen ? `<img src="${data.imagen}" alt="${data.nombre}" class="w-full h-36 object-cover rounded-xl mb-3 border border-slate-100">` : '';
-
-            let listaHtml = '<ul class="text-xs text-slate-600 space-y-1 mb-3 bg-slate-50 p-3 rounded-xl border border-slate-100">';
-            if (data.ingredientes) {
-                data.ingredientes.forEach(ing => {
-                    const infoIng = ingredientesDisponibles.find(i => i.id === ing.idIngrediente);
-                    const nombreIng = infoIng ? infoIng.nombre : ing.idIngrediente;
-                    const unidadIng = infoIng ? infoIng.unidad : '';
-                    listaHtml += `<li>• ${nombreIng}: <strong>${ing.cantidad} ${unidadIng}</strong></li>`;
-                });
-            }
-            listaHtml += '</ul>';
-
-            tarjeta.innerHTML = `
-                <div>
-                    ${htmlImagen}
-                    <h3 class="font-bold text-slate-900 text-base">${data.nombre}</h3>
-                    <p class="text-xs text-slate-500 mb-3">Rendimiento base: <strong class="text-slate-700">${data.porciones} porciones</strong></p>
-                    ${listaHtml}
-                </div>
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button class="btn-editar-receta bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-xl border border-amber-200 transition cursor-pointer" 
-                        data-id="${id}" data-nombre="${data.nombre}" data-porciones="${data.porciones}" data-imagen="${data.imagen || ''}">
-                        ✏️ Editar
-                    </button>
-                    <button class="btn-eliminar-receta bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-xl border border-red-200 transition cursor-pointer" 
-                        data-id="${id}">
-                        🗑️ Eliminar
-                    </button>
-                </div>
-            `;
-            contenedorTarjetas.appendChild(tarjeta);
-        });
-
-        document.querySelectorAll(".btn-eliminar-receta").forEach(btn => {
-            btn.addEventListener("click", async (e) => {
-                const id = e.currentTarget.dataset.id;
-                if (confirm("¿Eliminar este menú?")) {
-                    await deleteDoc(doc(db, "recetas", id));
-                    await cargarRecetas();
-                }
-            });
-        });
-
-        document.querySelectorAll(".btn-editar-receta").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                const ds = e.currentTarget.dataset;
-                inputRecetaId.value = ds.id;
-                inputNombre.value = ds.nombre;
-                inputPorciones.value = ds.porciones;
-                inputImagen.value = ds.imagen || "";
-                tituloFormReceta.innerHTML = `<span>✏️</span> Modificar Menú Tipo`;
-                document.getElementById("btn-guardar-receta").textContent = "Actualizar Menú";
-                btnCancelarEdicion.classList.remove("hidden");
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        });
-
-    } catch (error) {
-        console.error("Error al cargar recetas:", error);
-    }
-}
-
-if (btnCancelarEdicion) {
-    btnCancelarEdicion.addEventListener("click", () => {
-        limpiarFormularioReceta();
-    });
-}
-
-function limpiarFormularioReceta() {
-    formReceta.reset();
-    inputRecetaId.value = "";
-    ingredientesSeleccionados = [];
-    renderizarTablaIngredientesReceta();
-    tituloFormReceta.innerHTML = `<span>🍽️</span> Creación de Menú Tipo (Plato)`;
-    document.getElementById("btn-guardar-receta").textContent = "Grabar Menú";
-    btnCancelarEdicion.classList.add("hidden");
-}
-
+btnAgregarFila.addEventListener("click", agregarFilaIngrediente);
 formReceta.addEventListener("submit", guardarReceta);
-verificarSesion();
+window.addEventListener("DOMContentLoaded", cargarIngredientesDisponibles);
