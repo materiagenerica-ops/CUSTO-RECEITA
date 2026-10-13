@@ -15,26 +15,62 @@
             <img src="logotipoc.jpg" alt="Custo Receita Logo" class="h-12 w-auto object-contain">
             <div>
                 <h1 class="text-xl font-bold text-slate-900 leading-tight">Custo Receita</h1>
-                <p class="text-xs text-slate-500">Calculadora de Custos - Torres, RS</p>
+                <p class="text-xs text-slate-500">Calculadora de Costos - Torres, RS (Brasil)</p>
             </div>
         </div>
     </header>
 
     <!-- Contenido Principal -->
-    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow">
+    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow space-y-8">
         
-        <!-- Tarjeta de Selección de Menú -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4">Seleccionar Plato del Menú Tipo</h2>
+        <!-- SECCIÓN 1: Formulario de Carga de Ingredientes / Costos -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span>📦</span> Carga y Actualización de Ingredientes
+            </h2>
+            <form id="form-ingrediente" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Nombre del Insumo</label>
+                    <input type="text" id="ing-nombre" required placeholder="Ej. Pechuga de Pollo" 
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Unidad Medida</label>
+                    <select id="ing-unidad" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="kg">kg (Kilogramo)</option>
+                        <option value="litro">litro (Litro)</option>
+                        <option value="unidad">unidad (Pieza)</option>
+                        <option value="g">g (Gramos)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Precio Unitario (R$)</label>
+                    <input type="number" step="0.01" id="ing-precio" required placeholder="0.00" 
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" id="btn-guardar-ing" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded-lg text-sm transition duration-200 shadow-sm cursor-pointer">
+                        Grabar en Base
+                    </button>
+                </div>
+            </form>
+            <p id="mensaje-form" class="text-xs mt-2 text-emerald-600 font-medium hidden"></p>
+        </section>
+
+        <!-- SECCIÓN 2: Selección y Cálculo de Costo por Porción -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span>🍽️</span> Cálculo de Costo del Menú por Porción
+            </h2>
             <div class="flex flex-col sm:flex-row gap-4">
-                <select id="select-receta" class="flex-grow border border-slate-300 rounded-lg px-4 py-2.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <option value="">-- Cargando menú desde Firebase... --</option>
+                <select id="select-receta" class="flex-grow border border-slate-300 rounded-lg px-4 py-2.5 bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="">-- Seleccione un plato del menú tipo --</option>
                 </select>
-                <button id="btn-calcular" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg transition duration-200 shadow-sm cursor-pointer">
+                <button id="btn-calcular" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition duration-200 shadow-sm cursor-pointer">
                     Calcular Costo
                 </button>
             </div>
-        </div>
+        </section>
 
         <!-- Resultados del Cálculo -->
         <div id="resultado-container" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hidden">
@@ -50,32 +86,30 @@
                         <tr class="border-b border-slate-200 text-slate-500 text-sm">
                             <th class="py-2 px-3">Ingrediente</th>
                             <th class="py-2 px-3">Cantidad (Porción)</th>
-                            <th class="py-2 px-3">Precio Ref. (R$)</th>
+                            <th class="py-2 px-3">Precio Ref. en Base (R$)</th>
                             <th class="py-2 px-3 text-right">Costo Parcial (R$)</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-ingredientes-cuerpo" class="divide-y divide-slate-100 text-sm">
-                        <!-- Se llena dinámicamente con JS -->
+                        <!-- Dinámico -->
                     </tbody>
                 </table>
             </div>
 
             <!-- Totales -->
             <div class="bg-slate-50 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center border border-slate-200">
-                <div class="text-slate-600 mb-2 sm:mb-0">
-                    Precios actualizados en comercios de <span class="font-semibold text-slate-800">Torres, RS (Brasil)</span>
+                <div class="text-slate-600 mb-2 sm:mb-0 text-sm">
+                    Precios en Reales (BRL) - Comercios de <span class="font-semibold text-slate-800">Torres, RS</span>
                 </div>
                 <div class="text-right">
-                    <span class="text-sm text-slate-500 block">Costo Total por Porción:</span>
+                    <span class="text-xs text-slate-500 block">Costo Total por Porción:</span>
                     <span id="costo-total" class="text-2xl font-black text-emerald-600">R$ 0,00</span>
                 </div>
             </div>
         </div>
 
-        <!-- Estado de carga / Mensajes -->
-        <div id="mensaje-estado" class="text-center text-slate-500 py-6">
-            Conectando con la base de datos de Firebase...
-        </div>
+        <!-- Estado general -->
+        <div id="mensaje-estado" class="text-center text-slate-400 text-sm py-2"></div>
 
     </main>
 
