@@ -13,7 +13,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Manejo Global de Login para evitar bloqueos por módulos
 window.intentarLogin = function(e) {
     e.preventDefault();
     const usuario = document.getElementById("login-usuario").value.trim();
@@ -38,7 +37,6 @@ function verificarSesion() {
     }
 }
 
-// Funcionalidad del botón Salir
 const btnSalir = document.getElementById("btn-salir");
 if (btnSalir) {
     btnSalir.addEventListener("click", () => {
@@ -109,6 +107,7 @@ async function inicializarApp() {
     }
 }
 
+// Función de cálculo corregida y blindada contra comas/puntos decimales
 function calcularCostoReceta() {
     const recetaId = selectReceta.value;
     const comensalesDeseados = parseInt(inputComensales.value) || 1;
@@ -133,23 +132,40 @@ function calcularCostoReceta() {
         imagenRecetaContainer.classList.add("hidden");
     }
 
-    const porcionesBaseReceta = receta.porciones || 1;
+    const porcionesBaseReceta = parseFloat(receta.porciones) || 1;
     let costoTotalLote = 0;
 
     receta.ingredientes.forEach(item => {
         const ingInfo = cacheIngredientes[item.idIngrediente];
         if (ingInfo) {
-            let cantidadParaLote = (item.cantidad / porcionesBaseReceta) * comensalesDeseados;
-            let divisor = (ingInfo.unidad === "kg" || ingInfo.unidad === "litro") ? 1000 : 1;
+            // Asegurar lectura numérica robusta
+            const cantidadBaseReceta = parseFloat(item.cantidad) || 0;
+            const precioUnitario = parseFloat(ingInfo.precioUnitario) || 0;
+            
+            // Cantidad proporcional al lote de comensales deseados
+            let cantidadParaLote = (cantidadBaseReceta / porcionesBaseReceta) * comensalesDeseados;
+            
+            let costoParcial = 0;
+            let unidadMostrar = ingInfo.unidad;
 
-            let costoParcial = (cantidadParaLote / divisor) * ingInfo.precioUnitario;
+            // Lógica de cálculo estricta según unidad
+            if (ingInfo.unidad === "kg" || ingInfo.unidad === "litro") {
+                // Si la cantidad guardada es en kg o litros, costo = cantidad * precio por unidad
+                costoParcial = cantidadParaLote * precioUnitario;
+            } else if (ingInfo.unidad === "g" || ingInfo.unidad === "ml") {
+                costoParcial = (cantidadParaLote / 1000) * precioUnitario;
+            } else {
+                // Unidades discretas (piezas, docenas, atados)
+                costoParcial = cantidadParaLote * precioUnitario;
+            }
+
             costoTotalLote += costoParcial;
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="py-3 px-3 font-medium text-slate-800">${ingInfo.nombre}</td>
-                <td class="py-3 px-3 text-slate-600">${cantidadParaLote.toFixed(1)} ${ingInfo.unidad}</td>
-                <td class="py-3 px-3 text-slate-600">R$ ${ingInfo.precioUnitario.toFixed(2)} / ${ingInfo.unidad}</td>
+                <td class="py-3 px-3 text-slate-600">${cantidadParaLote.toFixed(2)} ${unidadMostrar}</td>
+                <td class="py-3 px-3 text-slate-600">R$ ${precioUnitario.toFixed(2)} / ${unidadMostrar}</td>
                 <td class="py-3 px-3 text-right font-semibold text-slate-900">R$ ${costoParcial.toFixed(2)}</td>
             `;
             tablaCuerpo.appendChild(tr);
@@ -208,14 +224,14 @@ async function cargarHistoricoEstadisticas() {
 
         querySnapshot.forEach(docSnap => {
             const data = docSnap.data();
-            acumuladoTotal += data.costoTotal || 0;
+            acumuladoTotal += parseFloat(data.costoTotal) || 0;
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="py-2 px-3 text-slate-600">${data.fecha}</td>
                 <td class="py-2 px-3 font-medium text-slate-800">${data.nombrePlato}</td>
                 <td class="py-2 px-3 text-slate-600">${data.comensales}</td>
-                <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${data.costoTotal.toFixed(2)}</td>
+                <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${(parseFloat(data.costoTotal) || 0).toFixed(2)}</td>
             `;
             tablaHistoricoCuerpo.appendChild(tr);
         });
@@ -234,5 +250,4 @@ async function cargarHistoricoEstadisticas() {
 if (btnCalcular) btnCalcular.addEventListener("click", calcularCostoReceta);
 if (btnRegistrar) btnRegistrar.addEventListener("click", registrarEstadistica);
 
-// Comprobar sesión al cargar
 verificarSesion();
