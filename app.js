@@ -107,7 +107,7 @@ async function inicializarApp() {
     }
 }
 
-// Función de cálculo corregida y blindada contra comas/puntos decimales
+// Cálculo de costos matemático exacto y blindado
 function calcularCostoReceta() {
     const recetaId = selectReceta.value;
     const comensalesDeseados = parseInt(inputComensales.value) || 1;
@@ -138,24 +138,42 @@ function calcularCostoReceta() {
     receta.ingredientes.forEach(item => {
         const ingInfo = cacheIngredientes[item.idIngrediente];
         if (ingInfo) {
-            // Asegurar lectura numérica robusta
-            const cantidadBaseReceta = parseFloat(item.cantidad) || 0;
-            const precioUnitario = parseFloat(ingInfo.precioUnitario) || 0;
+            // Forzar conversión numérica limpia (incluso si viene con comas)
+            const cantidadBaseReceta = Number(String(item.cantidad).replace(',', '.')) || 0;
+            const precioUnitario = Number(String(ingInfo.precioUnitario).replace(',', '.')) || 0;
             
-            // Cantidad proporcional al lote de comensales deseados
+            // Cantidad proporcional para el lote de comensales seleccionados
             let cantidadParaLote = (cantidadBaseReceta / porcionesBaseReceta) * comensalesDeseados;
             
             let costoParcial = 0;
-            let unidadMostrar = ingInfo.unidad;
+            let textoCantidadMostrar = "";
 
-            // Lógica de cálculo estricta según unidad
-            if (ingInfo.unidad === "kg" || ingInfo.unidad === "litro") {
-                // Si la cantidad guardada es en kg o litros, costo = cantidad * precio por unidad
+            if (ingInfo.unidad === "kg") {
+                // Si la cantidad es menor a 1 kg, lo mostramos en gramos para mayor claridad visual
+                if (cantidadParaLote < 1) {
+                    let gramos = cantidadParaLote * 1000;
+                    textoCantidadMostrar = `${gramos.toFixed(0)} g`;
+                } else {
+                    textoCantidadMostrar = `${cantidadParaLote.toFixed(2)} kg`;
+                }
                 costoParcial = cantidadParaLote * precioUnitario;
-            } else if (ingInfo.unidad === "g" || ingInfo.unidad === "ml") {
+            } else if (ingInfo.unidad === "litro") {
+                if (cantidadParaLote < 1) {
+                    let mililitros = cantidadParaLote * 1000;
+                    textoCantidadMostrar = `${mililitros.toFixed(0)} ml`;
+                } else {
+                    textoCantidadMostrar = `${cantidadParaLote.toFixed(2)} litros`;
+                }
+                costoParcial = cantidadParaLote * precioUnitario;
+            } else if (ingInfo.unidad === "g") {
+                textoCantidadMostrar = `${cantidadParaLote.toFixed(0)} g`;
+                costoParcial = (cantidadParaLote / 1000) * precioUnitario;
+            } else if (ingInfo.unidad === "ml") {
+                textoCantidadMostrar = `${cantidadParaLote.toFixed(0)} ml`;
                 costoParcial = (cantidadParaLote / 1000) * precioUnitario;
             } else {
-                // Unidades discretas (piezas, docenas, atados)
+                // Unidades (piezas, docenas, atados)
+                textoCantidadMostrar = `${cantidadParaLote.toFixed(1)} ${ingInfo.unidad}`;
                 costoParcial = cantidadParaLote * precioUnitario;
             }
 
@@ -164,8 +182,8 @@ function calcularCostoReceta() {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="py-3 px-3 font-medium text-slate-800">${ingInfo.nombre}</td>
-                <td class="py-3 px-3 text-slate-600">${cantidadParaLote.toFixed(2)} ${unidadMostrar}</td>
-                <td class="py-3 px-3 text-slate-600">R$ ${precioUnitario.toFixed(2)} / ${unidadMostrar}</td>
+                <td class="py-3 px-3 text-slate-600">${textoCantidadMostrar}</td>
+                <td class="py-3 px-3 text-slate-600">R$ ${precioUnitario.toFixed(2)} / ${ingInfo.unidad}</td>
                 <td class="py-3 px-3 text-right font-semibold text-slate-900">R$ ${costoParcial.toFixed(2)}</td>
             `;
             tablaCuerpo.appendChild(tr);
@@ -224,14 +242,15 @@ async function cargarHistoricoEstadisticas() {
 
         querySnapshot.forEach(docSnap => {
             const data = docSnap.data();
-            acumuladoTotal += parseFloat(data.costoTotal) || 0;
+            const costoH = Number(String(data.costoTotal).replace(',', '.')) || 0;
+            acumuladoTotal += costoH;
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="py-2 px-3 text-slate-600">${data.fecha}</td>
                 <td class="py-2 px-3 font-medium text-slate-800">${data.nombrePlato}</td>
                 <td class="py-2 px-3 text-slate-600">${data.comensales}</td>
-                <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${(parseFloat(data.costoTotal) || 0).toFixed(2)}</td>
+                <td class="py-2 px-3 text-right font-semibold text-slate-900">R$ ${costoH.toFixed(2)}</td>
             `;
             tablaHistoricoCuerpo.appendChild(tr);
         });
