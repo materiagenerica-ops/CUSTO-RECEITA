@@ -69,16 +69,16 @@ async function cargarRecetasAdmin() {
             const id = docSnap.id;
             cacheRecetasAdmin.push({ id, ...data });
 
-            let resumenIngredientes = data.ingredientes.map(item => {
+            let resumenIngredientes = (data.ingredientes || []).map(item => {
                 const ing = cacheIngredientes[item.idIngrediente];
                 const nombreIng = ing ? ing.nombre : "Insumo";
                 let cantidadMostrar = item.cantidad;
                 let unidadMostrar = ing ? ing.unidad : "";
 
-                if (ing && ing.unidad === "kg" && item.cantidad < 1) {
+                if (ing && (ing.unidad === "kg" || ing.unidad === "kilogramos") && item.cantidad < 1) {
                     cantidadMostrar = (item.cantidad * 1000).toFixed(0);
                     unidadMostrar = "g";
-                } else if (ing && ing.unidad === "litro" && item.cantidad < 1) {
+                } else if (ing && (ing.unidad === "litro" || ing.unidad === "litros") && item.cantidad < 1) {
                     cantidadMostrar = (item.cantidad * 1000).toFixed(0);
                     unidadMostrar = "ml";
                 }
@@ -98,11 +98,11 @@ async function cargarRecetasAdmin() {
                 <td class="py-3 px-3 text-slate-600">${data.porciones} porciones</td>
                 <td class="py-3 px-3 max-w-xs">${resumenIngredientes}</td>
                 <td class="py-3 px-3 text-right space-x-2 whitespace-nowrap">
-                    <button class="btn-editar-receta bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition cursor-pointer" 
+                    <button type="button" class="btn-editar-receta bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition cursor-pointer" 
                         data-id="${id}">
                         ✏️ Editar
                     </button>
-                    <button class="btn-eliminar-receta bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 transition cursor-pointer" 
+                    <button type="button" class="btn-eliminar-receta bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 transition cursor-pointer" 
                         data-id="${id}">
                         🗑️ Eliminar
                     </button>
@@ -171,15 +171,15 @@ function agregarFilaIngrediente(ingredienteSeleccionado = "", cantidadValor = ""
 
     function actualizarOpcionesUnidad(unidadBase, selecVal = "") {
         selectUnidadReceta.innerHTML = "";
-        if (unidadBase === "kg") {
+        if (unidadBase === "kg" || unidadBase === "kilogramos") {
             selectUnidadReceta.innerHTML = `
-                <option value="kg" ${selecVal === 'kg' ? 'selected' : ''}>kg</option>
-                <option value="g" ${selecVal !== 'kg' ? 'selected' : ''}>g (gramos)</option>
+                <option value="kg" ${selecVal === 'kg' || selecVal === 'kilogramos' ? 'selected' : ''}>kg</option>
+                <option value="g" ${selecVal === 'g' || selecVal === 'gramos' ? 'selected' : ''}>g (gramos)</option>
             `;
-        } else if (unidadBase === "litro") {
+        } else if (unidadBase === "litro" || unidadBase === "litros") {
             selectUnidadReceta.innerHTML = `
-                <option value="litro" ${selecVal === 'litro' ? 'selected' : ''}>litros</option>
-                <option value="ml" ${selecVal !== 'litro' ? 'selected' : ''}>ml (mililitros)</option>
+                <option value="litro" ${selecVal === 'litro' || selecVal === 'litros' ? 'selected' : ''}>litros</option>
+                <option value="ml" ${selecVal === 'ml' || selecVal === 'mililitros' ? 'selected' : ''}>ml (mililitros)</option>
             `;
         } else {
             selectUnidadReceta.innerHTML = `<option value="${unidadBase}">${unidadBase}</option>`;
@@ -218,7 +218,7 @@ function prepararEdicionReceta(id) {
     inputPorciones.value = receta.porciones;
     
     contenedorIngredientes.innerHTML = "";
-    receta.ingredientes.forEach(item => {
+    (receta.ingredientes || []).forEach(item => {
         agregarFilaIngrediente(item.idIngrediente, item.cantidad);
     });
 
@@ -344,6 +344,10 @@ async function guardarReceta(e) {
     }
 }
 
+if (formReceta) {
+    formReceta.addEventListener("submit", guardarReceta);
+}
+
 if (btnAgregarFila) {
     btnAgregarFila.addEventListener("click", (e) => {
         e.preventDefault();
@@ -355,5 +359,4 @@ if (btnCancelarEdicion) {
     btnCancelarEdicion.addEventListener("click", cancelarEdicionReceta);
 }
 
-if (formReceta) formReceta.addEventListener("submit", guardarReceta);
-window.addEventListener("DOMContentLoaded", inicializarRecetasMenu);
+inicializarRecetasMenu();
