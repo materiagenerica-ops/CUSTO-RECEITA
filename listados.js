@@ -39,11 +39,9 @@ async function inicializarListados() {
             cacheRecetas.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        if (cacheRecetas.length === 0) {
-            selectorMenusContainer.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay menús registrados. Ve a "Menú Tipo" para crear platos primero.</p>';
-            if (btnAgregarMenuLista) btnAgregarMenuLista.disabled = true;
-            if (btnGenerarConsolidado) btnGenerarConsolidado.disabled = true;
-            return;
+        // Incluso si hay o no recetas, aseguramos que el contenedor se limpie y permita agregar filas
+        if (selectorMenusContainer) {
+            selectorMenusContainer.innerHTML = "";
         }
 
         agregarFilaSelectorMenu();
@@ -51,10 +49,14 @@ async function inicializarListados() {
 
     } catch (error) {
         console.error("Error al inicializar listados:", error);
+        if (selectorMenusContainer && selectorMenusContainer.children.length === 0) {
+            agregarFilaSelectorMenu();
+        }
     }
 }
 
 async function cargarHistorialListados() {
+    if (!historialListadosContainer) return;
     try {
         const querySnapshot = await getDocs(collection(db, "listados_historico"));
         historialListadosContainer.innerHTML = "";
@@ -77,7 +79,7 @@ async function cargarHistorialListados() {
             div.className = "flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs";
             div.innerHTML = `
                 <div>
-                    <span class="font-bold text-slate-800 block">📅 ${item.fechaStr}</span>
+                    <span class="font-bold text-slate-800 block">📅 ${item.fechaStr || 'Fecha no registrada'}</span>
                     <span class="text-slate-500">Total ítems: ${item.totalInsumos || 0} - Costo: <strong class="text-emerald-700">R$ ${Number(item.costoTotal || 0).toFixed(2)}</strong></span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -108,18 +110,23 @@ async function cargarHistorialListados() {
 
     } catch (error) {
         console.error("Error al cargar historial de listados:", error);
+        historialListadosContainer.innerHTML = '<p class="text-xs text-red-400">Error al cargar el historial.</p>';
     }
 }
 
 function agregarFilaSelectorMenu(menuIdSeleccionado = "", comensalesValor = 10) {
+    if (!selectorMenusContainer) return;
+
     const div = document.createElement("div");
     div.className = "flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 fila-selector-menu";
 
     let optionsHtml = '<option value="">-- Seleccionar plato del menú --</option>';
-    cacheRecetas.forEach(receta => {
-        const selected = (receta.id === menuIdSeleccionado) ? "selected" : "";
-        optionsHtml += `<option value="${receta.id}" ${selected}>${receta.nombre} (Base: ${receta.porciones} porciones)</option>`;
-    });
+    if (cacheRecetas && cacheRecetas.length > 0) {
+        cacheRecetas.forEach(receta => {
+            const selected = (receta.id === menuIdSeleccionado) ? "selected" : "";
+            optionsHtml += `<option value="${receta.id}" ${selected}>${receta.nombre || receta.id} (Base: ${receta.porciones || 1} porciones)</option>`;
+        });
+    }
 
     div.innerHTML = `
         <select class="select-menu-item flex-grow border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
@@ -143,6 +150,7 @@ function agregarFilaSelectorMenu(menuIdSeleccionado = "", comensalesValor = 10) 
 }
 
 async function generarListadoConsolidado() {
+    if (!selectorMenusContainer) return;
     const filas = selectorMenusContainer.querySelectorAll(".fila-selector-menu");
     let acumuladorInsumos = {};
     let costoTotalGeneral = 0;
@@ -187,48 +195,48 @@ async function generarListadoConsolidado() {
         return;
     }
 
-    tablaConsolidadoCuerpo.innerHTML = "";
+    if (tablaConsolidadoCuerpo) tablaConsolidadoCuerpo.innerHTML = "";
     let listaInsumosGuardar = [];
 
     for (const [ingId, cantidadTotal] of Object.entries(acumuladorInsumos)) {
-        const ingInfo = cacheIngredientes[ingId];
-        if (ingInfo) {
-            const precioUnitario = Number(String(ingInfo.precio || ingInfo.precioUnitario).replace(',', '.')) || 0;
-            let costoParcial = 0;
-            let textoCantidadFormateada = "";
+        const ingInfo = cacheIngredientes[ingId] || { nombre: ingId, precio: 0, unidad: 'kg' };
+        const precioUnitario = Number(String(ingInfo.precio || ingInfo.precioUnitario || 0).replace(',', '.')) || 0;
+        let costoParcial = 0;
+        let textoCantidadFormateada = "";
 
-            const unidadInsumo = (ingInfo.unidad || 'kg').toLowerCase().trim();
+        const unidadInsumo = (ingInfo.unidad || 'kg').toLowerCase().trim();
 
-            if (unidadInsumo === "kg" || unidadInsumo === "kilogramos") {
-                costoParcial = cantidadTotal * precioUnitario;
-                if (cantidadTotal < 1) {
-                    textoCantidadFormateada = `${(cantidadTotal * 1000).toFixed(0)} g`;
-                } else {
-                    textoCantidadFormateada = `${cantidadTotal.toFixed(2)} kg`;
-                }
-            } else if (unidadInsumo === "litro" || unidadInsumo === "litros") {
-                costoParcial = cantidadTotal * precioUnitario;
-                if (cantidadTotal < 1) {
-                    textoCantidadFormateada = `${(cantidadTotal * 1000).toFixed(0)} ml`;
-                } else {
-                    textoCantidadFormateada = `${cantidadTotal.toFixed(2)} litros`;
-                }
-            } else if (unidadInsumo === "g" || unidadInsumo === "ml") {
-                costoParcial = (cantidadTotal / 1000) * precioUnitario;
-                textoCantidadFormateada = `${cantidadTotal.toFixed(0)} ${unidadInsumo}`;
+        if (unidadInsumo === "kg" || unidadInsumo === "kilogramos") {
+            costoParcial = cantidadTotal * precioUnitario;
+            if (cantidadTotal < 1) {
+                textoCantidadFormateada = `${(cantidadTotal * 1000).toFixed(0)} g`;
             } else {
-                costoParcial = cantidadTotal * precioUnitario;
-                textoCantidadFormateada = `${cantidadTotal.toFixed(1)} ${unidadInsumo}`;
+                textoCantidadFormateada = `${cantidadTotal.toFixed(2)} kg`;
             }
+        } else if (unidadInsumo === "litro" || unidadInsumo === "litros") {
+            costoParcial = cantidadTotal * precioUnitario;
+            if (cantidadTotal < 1) {
+                textoCantidadFormateada = `${(cantidadTotal * 1000).toFixed(0)} ml`;
+            } else {
+                textoCantidadFormateada = `${cantidadTotal.toFixed(2)} litros`;
+            }
+        } else if (unidadInsumo === "g" || unidadInsumo === "ml") {
+            costoParcial = (cantidadTotal / 1000) * precioUnitario;
+            textoCantidadFormateada = `${cantidadTotal.toFixed(0)} ${unidadInsumo}`;
+        } else {
+            costoParcial = cantidadTotal * precioUnitario;
+            textoCantidadFormateada = `${cantidadTotal.toFixed(1)} ${unidadInsumo}`;
+        }
 
-            costoTotalGeneral += costoParcial;
+        costoTotalGeneral += costoParcial;
 
-            listaInsumosGuardar.push({
-                nombreIngrediente: ingInfo.nombre || ingId,
-                cantidadTexto: textoCantidadFormateada,
-                costoParcial: costoParcial
-            });
+        listaInsumosGuardar.push({
+            nombreIngrediente: ingInfo.nombre || ingId,
+            cantidadTexto: textoCantidadFormateada,
+            costoParcial: costoParcial
+        });
 
+        if (tablaConsolidadoCuerpo) {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="py-3 px-3 font-medium text-slate-800">${ingInfo.nombre || ingId}</td>
@@ -240,9 +248,11 @@ async function generarListadoConsolidado() {
         }
     }
 
-    consolidadoCostoTotal.textContent = `R$ ${costoTotalGeneral.toFixed(2)}`;
-    seccionResultadoConsolidado.classList.remove("hidden");
-    seccionResultadoConsolidado.scrollIntoView({ behavior: 'smooth' });
+    if (consolidadoCostoTotal) consolidadoCostoTotal.textContent = `R$ ${costoTotalGeneral.toFixed(2)}`;
+    if (seccionResultadoConsolidado) {
+        seccionResultadoConsolidado.classList.remove("hidden");
+        seccionResultadoConsolidado.scrollIntoView({ behavior: 'smooth' });
+    }
 
     try {
         const ahora = new Date();
@@ -267,7 +277,7 @@ function mostrarListadoHistorial(id) {
     const item = cacheHistorialListados.find(h => h.id === id);
     if (!item) return;
 
-    selectorMenusContainer.innerHTML = "";
+    if (selectorMenusContainer) selectorMenusContainer.innerHTML = "";
     if (item.platos && item.platos.length > 0) {
         item.platos.forEach(p => {
             agregarFilaSelectorMenu(p.recetaId, p.comensales);
@@ -276,7 +286,7 @@ function mostrarListadoHistorial(id) {
         agregarFilaSelectorMenu();
     }
 
-    tablaConsolidadoCuerpo.innerHTML = "";
+    if (tablaConsolidadoCuerpo) tablaConsolidadoCuerpo.innerHTML = "";
     if (item.insumos && item.insumos.length > 0) {
         item.insumos.forEach(ins => {
             const tr = document.createElement("tr");
@@ -290,9 +300,11 @@ function mostrarListadoHistorial(id) {
         });
     }
 
-    consolidadoCostoTotal.textContent = `R$ ${Number(item.costoTotal || 0).toFixed(2)}`;
-    seccionResultadoConsolidado.classList.remove("hidden");
-    seccionResultadoConsolidado.scrollIntoView({ behavior: 'smooth' });
+    if (consolidadoCostoTotal) consolidadoCostoTotal.textContent = `R$ ${Number(item.costoTotal || 0).toFixed(2)}`;
+    if (seccionResultadoConsolidado) {
+        seccionResultadoConsolidado.classList.remove("hidden");
+        seccionResultadoConsolidado.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 async function eliminarListadoHistorial(id) {
