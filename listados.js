@@ -27,30 +27,47 @@ const historialListadosContainer = document.getElementById("historial-listados-c
 
 async function inicializarListados() {
     try {
+        if (selectorMenusContainer) {
+            selectorMenusContainer.innerHTML = '<p class="text-xs text-slate-400 p-3">Cargando menús desde la base de datos...</p>';
+        }
+
+        // 1. Cargar ingredientes
         const qIng = await getDocs(collection(db, "ingredientes"));
         cacheIngredientes = {};
         qIng.forEach(docSnap => {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
+        // 2. Cargar recetas y asegurar que lleguen antes de renderizar
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         qRec.forEach(docSnap => {
             cacheRecetas.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // Incluso si hay o no recetas, aseguramos que el contenedor se limpie y permita agregar filas
         if (selectorMenusContainer) {
             selectorMenusContainer.innerHTML = "";
         }
 
-        agregarFilaSelectorMenu();
+        if (cacheRecetas.length === 0) {
+            if (selectorMenusContainer) {
+                selectorMenusContainer.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay menús registrados. Ve a "Menú Tipo" para crear platos primero.</p>';
+            }
+            if (btnAgregarMenuLista) btnAgregarMenuLista.disabled = true;
+            if (btnGenerarConsolidado) btnGenerarConsolidado.disabled = true;
+        } else {
+            if (btnAgregarMenuLista) btnAgregarMenuLista.disabled = false;
+            if (btnGenerarConsolidado) btnGenerarConsolidado.disabled = false;
+            // 3. Crear la primera fila YA CON LOS DATOS CARGADOS en el caché
+            agregarFilaSelectorMenu();
+        }
+
         await cargarHistorialListados();
 
     } catch (error) {
         console.error("Error al inicializar listados:", error);
-        if (selectorMenusContainer && selectorMenusContainer.children.length === 0) {
-            agregarFilaSelectorMenu();
+        if (selectorMenusContainer) {
+            selectorMenusContainer.innerHTML = '<p class="text-xs text-red-500 p-3">Error al conectar con la base de datos.</p>';
         }
     }
 }
