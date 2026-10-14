@@ -250,12 +250,45 @@ async function eliminarReceta(id) {
     }
 }
 
-function convertirImagenABase64(file) {
+// FUNCIÓN PARA COMPRIMIR Y REDIMENSIONAR LA IMAGEN ANTES DE GUARDARLA
+function comprimirImagen(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
         reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+                
+                // Máximo ancho o alto de 600px para asegurar bajo peso en bytes
+                const MAX_SIZE = 600;
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Comprimir a formato JPEG con calidad 0.7 para que pese pocos KB
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                resolve(dataUrl);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
     });
 }
 
@@ -299,9 +332,10 @@ async function guardarReceta(e) {
 
     if (inputImagen && inputImagen.files && inputImagen.files[0]) {
         try {
-            imagenBase64 = await convertirImagenABase64(inputImagen.files[0]);
+            // Comprimimos la imagen para evitar superar el límite de 1MB de Firestore
+            imagenBase64 = await comprimirImagen(inputImagen.files[0]);
         } catch (err) {
-            console.error("Error al procesar imagen:", err);
+            console.error("Error al procesar/comprimir imagen:", err);
         }
     } else if (recetaExistente && recetaExistente.imagen) {
         imagenBase64 = recetaExistente.imagen;
