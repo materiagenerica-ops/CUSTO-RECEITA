@@ -73,6 +73,17 @@
             </div>
         </section>
 
+        <!-- Historial de Listados Guardados (Visible en pantalla, oculto al imprimir) -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 print:hidden">
+            <h3 class="text-base font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <span>📚</span> Historial de Listados Guardados en Base de Datos
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Listados anteriores generados organizados por fecha.</p>
+            <div id="historial-listados-container" class="space-y-3">
+                <p class="text-xs text-slate-400">Cargando historial...</p>
+            </div>
+        </section>
+
         <section id="seccion-resultado-consolidado" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hidden print:block">
             <div class="border-b border-slate-200 pb-4 mb-4 flex justify-between items-end">
                 <div>
