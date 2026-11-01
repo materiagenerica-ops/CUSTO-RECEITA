@@ -15,7 +15,7 @@ const db = getFirestore(app);
 
 let cacheIngredientes = {};
 let cacheRecetas = [];
-let cacheCronogramas = [];
+let cacheProduccion = [];
 let cacheHistorialListados = [];
 
 const selectorMenusContainer = document.getElementById("selector-menus-container");
@@ -41,31 +41,21 @@ async function inicializarListados() {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Cargar recetas
+        // 2. Cargar recetas (para obtener IDs y nombres)
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         qRec.forEach(docSnap => {
             cacheRecetas.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // 3. Cargar cronogramas barriendo las 3 posibles colecciones que usa cronograma_menu.js
-        cacheCronogramas = [];
-        const posiblesColecciones = ["cronograma", "cronogramas", "cronograma_menu"];
-        
-        for (const colName of posiblesColecciones) {
-            try {
-                const querySnapshot = await getDocs(collection(db, colName));
-                querySnapshot.forEach(docSnap => {
-                    if (!cacheCronogramas.some(c => c.id === docSnap.id)) {
-                        cacheCronogramas.push({ id: docSnap.id, origen: colName, ...docSnap.data() });
-                    }
-                });
-            } catch (e) {
-                // Si una colección no existe o no tiene permisos, continúa con la siguiente
-            }
-        }
+        // 3. Cargar producción histórica (Cronograma)
+        const qHistorico = await getDocs(collection(db, "produccion_historico"));
+        cacheProduccion = [];
+        qHistorico.forEach(docSnap => {
+            cacheProduccion.push({ id: docSnap.id, ...docSnap.data() });
+        });
 
-        poblarSelectorCronogramas();
+        poblarSelectorCronograma();
 
         if (selectorMenusContainer) {
             selectorMenusContainer.innerHTML = "";
@@ -90,66 +80,60 @@ async function inicializarListados() {
     }
 }
 
-function poblarSelectorCronogramas() {
+function poblarSelectorCronograma() {
     if (!selectImportarCronograma) return;
-    selectImportarCronograma.innerHTML = '<option value="">-- Selecciona un cronograma guardado --</option>';
+    selectImportarCronograma.innerHTML = '<option value="">-- Selecciona una fecha del cronograma --</option>';
     
-    if (cacheCronogramas.length === 0) {
+    // Agrupar los registros de producción por fecha
+    const fechasUnicas = [...new Set(cacheProduccion.map(item => item.fecha))].filter(Boolean);
+    fechasUnicas.sort().reverse(); // Más recientes primero
+
+    if (fechasUnicas.length === 0) {
         const opt = document.createElement("option");
         opt.value = "";
-        opt.textContent = "-- No se encontraron cronogramas en la BD --";
+        opt.textContent = "-- No hay fechas registradas en el cronograma --";
         opt.disabled = true;
         selectImportarCronograma.appendChild(opt);
         return;
     }
 
-    cacheCronogramas.forEach(cron => {
-        const nombreCron = cron.nombre || cron.titulo || cron.nombreCronograma || `Cronograma (${cron.fechaStr || cron.id})`;
+    fechasUnicas.forEach(fecha => {
+        const platosDeFecha = cacheProduccion.filter(p => p.fecha === fecha);
         const opt = document.createElement("option");
-        opt.value = cron.id;
-        opt.textContent = `${nombreCron} [${cron.origen}]`;
+        opt.value = fecha;
+        opt.textContent = `📅 Fecha: ${fecha} (${platosDeFecha.length} plato${platosDeFecha.length > 1 ? 's' : ''})`;
         selectImportarCronograma.appendChild(opt);
     });
 }
 
 function importarCronogramaSeleccionado() {
-    const cronId = selectImportarCronograma.value;
-    if (!cronId) {
-        alert("Por favor, selecciona un cronograma de la lista.");
+    const fechaSeleccionada = selectImportarCronograma.value;
+    if (!fechaSeleccionada) {
+        alert("Por favor, selecciona una fecha del cronograma.");
         return;
     }
 
-    const cronograma = cacheCronogramas.find(c => c.id === cronId);
-    if (!cronograma) {
-        alert("No se encontró el cronograma seleccionado.");
-        return;
-    }
+    const platosFecha = cacheProduccion.filter(p => p.fecha === fechaSeleccionada);
 
-    // Buscar los platos en cualquiera de las estructuras posibles
-    const platosCronograma = cronograma.platos || cronograma.items || cronograma.menuList || cronograma.menuItems || [];
-
-    if (platosCronograma.length === 0) {
-        alert("El cronograma seleccionado no contiene platos registrados.");
+    if (platosFecha.length === 0) {
+        alert("No se encontraron platos para la fecha seleccionada.");
         return;
     }
 
     selectorMenusContainer.innerHTML = "";
-    platosCronograma.forEach(p => {
-        const idReceta = p.recetaId || p.idReceta || p.idMenu || p.id;
-        const comensales = p.comensales || p.porcionesDeseadas || p.cantidadComensales || 10;
+    
+    platosFecha.forEach(p => {
+        // Buscar la receta en cacheRecetas haciendo coincidir el nombre (sin distinguir mayúsculas)
+        const nombrePlatoBuscado = (p.nombrePlato || "").toLowerCase().trim();
+        const recetaEncontrada = cacheRecetas.find(r => (r.nombre || "").toLowerCase().trim() === nombrePlatoBuscado);
         
-        if (idReceta) {
-            agregarFilaSelectorMenu(idReceta, comensales);
-        }
+        const recetaId = recetaEncontrada ? recetaEncontrada.id : "";
+        const comensales = p.comensales || 10;
+
+        agregarFilaSelectorMenu(recetaId, comensales);
     });
 
-    if (selectorMenusContainer.children.length === 0) {
-        alert("Los ítems del cronograma no tienen un ID de receta válido asociado.");
-        agregarFilaSelectorMenu();
-        return;
-    }
-
-    alert("¡Cronograma importado con éxito!");
+    alert("¡Platos del cronograma importados con éxito!");
 }
 
 async function cargarHistorialListados() {
