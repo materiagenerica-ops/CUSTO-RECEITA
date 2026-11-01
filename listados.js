@@ -15,6 +15,7 @@ const db = getFirestore(app);
 
 let cacheIngredientes = {};
 let cacheRecetas = [];
+let cacheCronograma = [];
 let cacheHistorialListados = [];
 
 const selectorMenusContainer = document.getElementById("selector-menus-container");
@@ -24,11 +25,13 @@ const seccionResultadoConsolidado = document.getElementById("seccion-resultado-c
 const tablaConsolidadoCuerpo = document.getElementById("tabla-consolidado-cuerpo");
 const consolidadoCostoTotal = document.getElementById("consolidado-costo-total");
 const historialListadosContainer = document.getElementById("historial-listados-container");
+const selectImportarCronograma = document.getElementById("select-importar-cronograma");
+const btnImportarCronograma = document.getElementById("btn-importar-cronograma");
 
 async function inicializarListados() {
     try {
         if (selectorMenusContainer) {
-            selectorMenusContainer.innerHTML = '<p class="text-xs text-slate-400 p-3">Cargando menús desde la base de datos...</p>';
+            selectorMenusContainer.innerHTML = '<p class="text-xs text-slate-400 p-3">Cargando datos...</p>';
         }
 
         // 1. Cargar ingredientes
@@ -38,12 +41,25 @@ async function inicializarListados() {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Cargar recetas y asegurar que lleguen antes de renderizar
+        // 2. Cargar recetas
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         qRec.forEach(docSnap => {
             cacheRecetas.push({ id: docSnap.id, ...docSnap.data() });
         });
+
+        // 3. Cargar datos directamente de la colección exacta "cronograma"
+        cacheCronograma = [];
+        try {
+            const qCron = await getDocs(collection(db, "cronograma"));
+            qCron.forEach(docSnap => {
+                cacheCronograma.push({ id: docSnap.id, ...docSnap.data() });
+            });
+        } catch (e) {
+            console.error("Error al leer la colección cronograma:", e);
+        }
+
+        poblarSelectorCronograma();
 
         if (selectorMenusContainer) {
             selectorMenusContainer.innerHTML = "";
@@ -51,14 +67,13 @@ async function inicializarListados() {
 
         if (cacheRecetas.length === 0) {
             if (selectorMenusContainer) {
-                selectorMenusContainer.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay menús registrados. Ve a "Menú Tipo" para crear platos primero.</p>';
+                selectorMenusContainer.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay menús registrados. Ve a "Menú Tipo" primero.</p>';
             }
             if (btnAgregarMenuLista) btnAgregarMenuLista.disabled = true;
             if (btnGenerarConsolidado) btnGenerarConsolidado.disabled = true;
         } else {
             if (btnAgregarMenuLista) btnAgregarMenuLista.disabled = false;
             if (btnGenerarConsolidado) btnGenerarConsolidado.disabled = false;
-            // 3. Crear la primera fila YA CON LOS DATOS CARGADOS en el caché
             agregarFilaSelectorMenu();
         }
 
@@ -66,10 +81,49 @@ async function inicializarListados() {
 
     } catch (error) {
         console.error("Error al inicializar listados:", error);
-        if (selectorMenusContainer) {
-            selectorMenusContainer.innerHTML = '<p class="text-xs text-red-500 p-3">Error al conectar con la base de datos.</p>';
-        }
     }
+}
+
+function poblarSelectorCronograma() {
+    if (!selectImportarCronograma) return;
+    selectImportarCronograma.innerHTML = '<option value="">-- Selecciona el cronograma guardado --</option>';
+    
+    cacheCronograma.forEach(cron => {
+        // Estructura guardada por cronograma_menu.js
+        const nombreCron = cron.nombre || cron.titulo || `Cronograma (${cron.fechaStr || cron.id})` ;
+        const opt = document.createElement("option");
+        opt.value = cron.id;
+        opt.textContent = nombreCron;
+        selectImportarCronograma.appendChild(opt);
+    });
+}
+
+function importarCronogramaSeleccionado() {
+    const cronId = selectImportarCronograma.value;
+    if (!cronId) {
+        alert("Por favor, selecciona un cronograma.");
+        return;
+    }
+
+    const cronograma = cacheCronograma.find(c => c.id === cronId);
+    if (!cronograma) return;
+
+    // Obtiene los platos del documento del cronograma
+    const platosCronograma = cronograma.platos || cronograma.items || [];
+
+    if (platosCronograma.length === 0) {
+        alert("El cronograma seleccionado no tiene platos cargados.");
+        return;
+    }
+
+    selectorMenusContainer.innerHTML = "";
+    platosCronograma.forEach(p => {
+        const idReceta = p.recetaId || p.idReceta;
+        const comensales = p.comensales || 10;
+        agregarFilaSelectorMenu(idReceta, comensales);
+    });
+
+    alert("¡Cronograma importado con éxito!");
 }
 
 async function cargarHistorialListados() {
@@ -113,21 +167,18 @@ async function cargarHistorialListados() {
 
         document.querySelectorAll(".btn-ver-historial").forEach(btn => {
             btn.addEventListener("click", (e) => {
-                const id = e.currentTarget.dataset.id;
-                mostrarListadoHistorial(id);
+                mostrarListadoHistorial(e.currentTarget.dataset.id);
             });
         });
 
         document.querySelectorAll(".btn-eliminar-historial").forEach(btn => {
             btn.addEventListener("click", (e) => {
-                const id = e.currentTarget.dataset.id;
-                eliminarListadoHistorial(id);
+                eliminarListadoHistorial(e.currentTarget.dataset.id);
             });
         });
 
     } catch (error) {
-        console.error("Error al cargar historial de listados:", error);
-        historialListadosContainer.innerHTML = '<p class="text-xs text-red-400">Error al cargar el historial.</p>';
+        console.error("Error al cargar historial:", error);
     }
 }
 
@@ -208,7 +259,7 @@ async function generarListadoConsolidado() {
     });
 
     if (!hayPlatosSeleccionados) {
-        alert("Por favor, selecciona al menos un plato y define la cantidad de comensales.");
+        alert("Por favor, selecciona al menos un plato o importa un cronograma.");
         return;
     }
 
@@ -225,18 +276,10 @@ async function generarListadoConsolidado() {
 
         if (unidadInsumo === "kg" || unidadInsumo === "kilogramos") {
             costoParcial = cantidadTotal * precioUnitario;
-            if (cantidadTotal < 1) {
-                textoCantidadFormateada = `${(cantidadTotal * 1000).toFixed(0)} g`;
-            } else {
-                textoCantidadFormateada = `${cantidadTotal.toFixed(2)} kg`;
-            }
+            textoCantidadFormateada = cantidadTotal < 1 ? `${(cantidadTotal * 1000).toFixed(0)} g` : `${cantidadTotal.toFixed(2)} kg`;
         } else if (unidadInsumo === "litro" || unidadInsumo === "litros") {
             costoParcial = cantidadTotal * precioUnitario;
-            if (cantidadTotal < 1) {
-                textoCantidadFormateada = `${(cantidadTotal * 1000).toFixed(0)} ml`;
-            } else {
-                textoCantidadFormateada = `${cantidadTotal.toFixed(2)} litros`;
-            }
+            textoCantidadFormateada = cantidadTotal < 1 ? `${(cantidadTotal * 1000).toFixed(0)} ml` : `${cantidadTotal.toFixed(2)} litros`;
         } else if (unidadInsumo === "g" || unidadInsumo === "ml") {
             costoParcial = (cantidadTotal / 1000) * precioUnitario;
             textoCantidadFormateada = `${cantidadTotal.toFixed(0)} ${unidadInsumo}`;
@@ -286,7 +329,7 @@ async function generarListadoConsolidado() {
 
         await cargarHistorialListados();
     } catch (error) {
-        console.error("Error al guardar listado en Firestore:", error);
+        console.error("Error al guardar listado:", error);
     }
 }
 
@@ -331,9 +374,15 @@ async function eliminarListadoHistorial(id) {
             await cargarHistorialListados();
         } catch (error) {
             console.error("Error al eliminar listado:", error);
-            alert("No se pudo eliminar el registro.");
         }
     }
+}
+
+if (btnImportarCronograma) {
+    btnImportarCronograma.addEventListener("click", (e) => {
+        e.preventDefault();
+        importarCronogramaSeleccionado();
+    });
 }
 
 if (btnAgregarMenuLista) {
