@@ -31,7 +31,7 @@ const btnImportarCronograma = document.getElementById("btn-importar-cronograma")
 async function inicializarListados() {
     try {
         if (selectorMenusContainer) {
-            selectorMenusContainer.innerHTML = '<p class="text-xs text-slate-400 p-3">Cargando datos...</p>';
+            selectorMenusContainer.innerHTML = '<p class="text-xs text-slate-400 p-3">Cargando menús desde la base de datos...</p>';
         }
 
         // 1. Cargar ingredientes
@@ -41,14 +41,14 @@ async function inicializarListados() {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Cargar recetas
+        // 2. Cargar recetas (la colección real donde se guardan los platos en Custo Receita)
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         qRec.forEach(docSnap => {
             cacheRecetas.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // 3. Cargar datos directamente de la colección exacta "cronograma"
+        // 3. Cargar cronograma (para el selector de importación)
         cacheCronograma = [];
         try {
             const qCron = await getDocs(collection(db, "cronograma"));
@@ -56,7 +56,7 @@ async function inicializarListados() {
                 cacheCronograma.push({ id: docSnap.id, ...docSnap.data() });
             });
         } catch (e) {
-            console.error("Error al leer la colección cronograma:", e);
+            console.log("No se encontraron registros en cronograma.");
         }
 
         poblarSelectorCronograma();
@@ -67,7 +67,7 @@ async function inicializarListados() {
 
         if (cacheRecetas.length === 0) {
             if (selectorMenusContainer) {
-                selectorMenusContainer.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay menús registrados. Ve a "Menú Tipo" primero.</p>';
+                selectorMenusContainer.innerHTML = '<p class="text-xs text-amber-600 p-3 bg-amber-50 rounded-xl">No hay menús registrados. Ve a "Menú Tipo" para crear platos primero.</p>';
             }
             if (btnAgregarMenuLista) btnAgregarMenuLista.disabled = true;
             if (btnGenerarConsolidado) btnGenerarConsolidado.disabled = true;
@@ -89,8 +89,7 @@ function poblarSelectorCronograma() {
     selectImportarCronograma.innerHTML = '<option value="">-- Selecciona el cronograma guardado --</option>';
     
     cacheCronograma.forEach(cron => {
-        // Estructura guardada por cronograma_menu.js
-        const nombreCron = cron.nombre || cron.titulo || `Cronograma (${cron.fechaStr || cron.id})` ;
+        const nombreCron = cron.nombre || cron.titulo || `Cronograma (${cron.fechaStr || cron.id})`;
         const opt = document.createElement("option");
         opt.value = cron.id;
         opt.textContent = nombreCron;
@@ -108,7 +107,7 @@ function importarCronogramaSeleccionado() {
     const cronograma = cacheCronograma.find(c => c.id === cronId);
     if (!cronograma) return;
 
-    // Obtiene los platos del documento del cronograma
+    // Lee los platos guardados en el documento del cronograma
     const platosCronograma = cronograma.platos || cronograma.items || [];
 
     if (platosCronograma.length === 0) {
@@ -118,8 +117,8 @@ function importarCronogramaSeleccionado() {
 
     selectorMenusContainer.innerHTML = "";
     platosCronograma.forEach(p => {
-        const idReceta = p.recetaId || p.idReceta;
-        const comensales = p.comensales || 10;
+        const idReceta = p.recetaId || p.idReceta || p.id;
+        const comensales = p.comensales || p.porcionesDeseadas || 10;
         agregarFilaSelectorMenu(idReceta, comensales);
     });
 
