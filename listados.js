@@ -25,8 +25,9 @@ const seccionResultadoConsolidado = document.getElementById("seccion-resultado-c
 const tablaConsolidadoCuerpo = document.getElementById("tabla-consolidado-cuerpo");
 const consolidadoCostoTotal = document.getElementById("consolidado-costo-total");
 const historialListadosContainer = document.getElementById("historial-listados-container");
-const selectImportarCronograma = document.getElementById("select-importar-cronograma");
-const btnImportarCronograma = document.getElementById("btn-importar-cronograma");
+const inputFechaDesde = document.getElementById("input-fecha-desde");
+const inputFechaHasta = document.getElementById("input-fecha-hasta");
+const btnImportarRango = document.getElementById("btn-importar-rango");
 
 async function inicializarListados() {
     try {
@@ -41,7 +42,7 @@ async function inicializarListados() {
             cacheIngredientes[docSnap.id] = docSnap.data();
         });
 
-        // 2. Cargar recetas (para obtener IDs y nombres)
+        // 2. Cargar recetas
         const qRec = await getDocs(collection(db, "recetas"));
         cacheRecetas = [];
         qRec.forEach(docSnap => {
@@ -54,8 +55,6 @@ async function inicializarListados() {
         qHistorico.forEach(docSnap => {
             cacheProduccion.push({ id: docSnap.id, ...docSnap.data() });
         });
-
-        poblarSelectorCronograma();
 
         if (selectorMenusContainer) {
             selectorMenusContainer.innerHTML = "";
@@ -80,60 +79,62 @@ async function inicializarListados() {
     }
 }
 
-function poblarSelectorCronograma() {
-    if (!selectImportarCronograma) return;
-    selectImportarCronograma.innerHTML = '<option value="">-- Selecciona una fecha del cronograma --</option>';
-    
-    // Agrupar los registros de producción por fecha
-    const fechasUnicas = [...new Set(cacheProduccion.map(item => item.fecha))].filter(Boolean);
-    fechasUnicas.sort().reverse(); // Más recientes primero
+function importarRangoFechas() {
+    const fechaDesde = inputFechaDesde.value;
+    const fechaHasta = inputFechaHasta.value;
 
-    if (fechasUnicas.length === 0) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "-- No hay fechas registradas en el cronograma --";
-        opt.disabled = true;
-        selectImportarCronograma.appendChild(opt);
+    if (!fechaDesde || !fechaHasta) {
+        alert("Por favor, selecciona tanto la fecha de inicio como la fecha de fin.");
         return;
     }
 
-    fechasUnicas.forEach(fecha => {
-        const platosDeFecha = cacheProduccion.filter(p => p.fecha === fecha);
-        const opt = document.createElement("option");
-        opt.value = fecha;
-        opt.textContent = `📅 Fecha: ${fecha} (${platosDeFecha.length} plato${platosDeFecha.length > 1 ? 's' : ''})`;
-        selectImportarCronograma.appendChild(opt);
-    });
-}
-
-function importarCronogramaSeleccionado() {
-    const fechaSeleccionada = selectImportarCronograma.value;
-    if (!fechaSeleccionada) {
-        alert("Por favor, selecciona una fecha del cronograma.");
+    if (fechaDesde > fechaHasta) {
+        alert("La fecha de inicio no puede ser posterior a la fecha de fin.");
         return;
     }
 
-    const platosFecha = cacheProduccion.filter(p => p.fecha === fechaSeleccionada);
+    // Filtrar platos del cronograma cuyo campo 'fecha' esté dentro del rango (inclusive)
+    const platosEnRango = cacheProduccion.filter(p => p.fecha && p.fecha >= fechaDesde && p.fecha <= fechaHasta);
 
-    if (platosFecha.length === 0) {
-        alert("No se encontraron platos para la fecha seleccionada.");
+    if (platosEnRango.length === 0) {
+        alert("No se encontraron platos registrados en el cronograma para el rango de fechas seleccionado.");
         return;
     }
 
     selectorMenusContainer.innerHTML = "";
-    
-    platosFecha.forEach(p => {
-        // Buscar la receta en cacheRecetas haciendo coincidir el nombre (sin distinguir mayúsculas)
+
+    // Si un mismo plato aparece varios días en el rango, sumamos sus comensales para agruparlos eficientemente
+    let acumuladorPlatosRango = {};
+
+    platosEnRango.forEach(p => {
         const nombrePlatoBuscado = (p.nombrePlato || "").toLowerCase().trim();
         const recetaEncontrada = cacheRecetas.find(r => (r.nombre || "").toLowerCase().trim() === nombrePlatoBuscado);
-        
-        const recetaId = recetaEncontrada ? recetaEncontrada.id : "";
-        const comensales = p.comensales || 10;
 
-        agregarFilaSelectorMenu(recetaId, comensales);
+        if (recetaEncontrada) {
+            const recetaId = recetaEncontrada.id;
+            const comensales = parseInt(p.comensales) || 0;
+
+            if (!acumuladorPlatosRango[recetaId]) {
+                acumuladorPlatosRango[recetaId] = 0;
+            }
+            acumuladorPlatosRango[recetaId] += comensales;
+        }
     });
 
-    alert("¡Platos del cronograma importados con éxito!");
+    const recetaIdsUnicos = Object.keys(acumuladorPlatosRango);
+
+    if (recetaIdsUnicos.length === 0) {
+        alert("Los platos del cronograma en este rango no coinciden con ninguna receta activa.");
+        agregarFilaSelectorMenu();
+        return;
+    }
+
+    recetaIdsUnicos.forEach(recetaId => {
+        const totalComensales = acumuladorPlatosRango[recetaId];
+        agregarFilaSelectorMenu(recetaId, totalComensales);
+    });
+
+    alert(`¡Se importaron ${recetaIdsUnicos.length} plato(s) acumulados del rango ${fechaDesde} al ${fechaHasta}!`);
 }
 
 async function cargarHistorialListados() {
@@ -269,7 +270,7 @@ async function generarListadoConsolidado() {
     });
 
     if (!hayPlatosSeleccionados) {
-        alert("Por favor, selecciona al menos un plato o importa un cronograma.");
+        alert("Por favor, selecciona al menos un plato o importa un rango de fechas.");
         return;
     }
 
@@ -388,10 +389,10 @@ async function eliminarListadoHistorial(id) {
     }
 }
 
-if (btnImportarCronograma) {
-    btnImportarCronograma.addEventListener("click", (e) => {
+if (btnImportarRango) {
+    btnImportarRango.addEventListener("click", (e) => {
         e.preventDefault();
-        importarCronogramaSeleccionado();
+        importarRangoFechas();
     });
 }
 
