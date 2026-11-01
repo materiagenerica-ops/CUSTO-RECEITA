@@ -48,6 +48,7 @@ async function inicializarListados() {
         qRec.forEach(docSnap => {
             cacheRecetas.push({ id: docSnap.id, ...docSnap.data() });
         });
+        console.log("Recetas cargadas en caché:", cacheRecetas.length);
 
         // 3. Cargar producción histórica (Cronograma)
         const qHistorico = await getDocs(collection(db, "produccion_historico"));
@@ -55,6 +56,7 @@ async function inicializarListados() {
         qHistorico.forEach(docSnap => {
             cacheProduccion.push({ id: docSnap.id, ...docSnap.data() });
         });
+        console.log("Registros de producción histórica cargados:", cacheProduccion.length);
 
         if (selectorMenusContainer) {
             selectorMenusContainer.innerHTML = "";
@@ -79,9 +81,16 @@ async function inicializarListados() {
     }
 }
 
+function limpiarTexto(str) {
+    return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
 function importarRangoFechas() {
     const fechaDesde = inputFechaDesde.value;
     const fechaHasta = inputFechaHasta.value;
+
+    console.log("Buscando rango de fechas:", fechaDesde, "hasta", fechaHasta);
+    console.log("Total registros en producción_historico:", cacheProduccion.length);
 
     if (!fechaDesde || !fechaHasta) {
         alert("Por favor, selecciona tanto la fecha de inicio como la fecha de fin.");
@@ -93,22 +102,24 @@ function importarRangoFechas() {
         return;
     }
 
-    // Filtrar platos del cronograma cuyo campo 'fecha' esté dentro del rango (inclusive)
+    // Filtrar platos del cronograma cuyo campo 'fecha' esté dentro del rango
     const platosEnRango = cacheProduccion.filter(p => p.fecha && p.fecha >= fechaDesde && p.fecha <= fechaHasta);
+    console.log("Platos encontrados en ese rango:", platosEnRango);
 
     if (platosEnRango.length === 0) {
-        alert("No se encontraron platos registrados en el cronograma para el rango de fechas seleccionado.");
+        alert(`No se encontraron platos registrados en el cronograma entre el ${fechaDesde} y el ${fechaHasta}.`);
         return;
     }
 
     selectorMenusContainer.innerHTML = "";
-
-    // Si un mismo plato aparece varios días en el rango, sumamos sus comensales para agruparlos eficientemente
     let acumuladorPlatosRango = {};
+    let noEncontrados = [];
 
     platosEnRango.forEach(p => {
-        const nombrePlatoBuscado = (p.nombrePlato || "").toLowerCase().trim();
-        const recetaEncontrada = cacheRecetas.find(r => (r.nombre || "").toLowerCase().trim() === nombrePlatoBuscado);
+        const nombrePlatoBuscado = limpiarTexto(p.nombrePlato);
+        
+        // Buscar coincidencia exacta o parcial con las recetas
+        const recetaEncontrada = cacheRecetas.find(r => limpiarTexto(r.nombre) === nombrePlatoBuscado);
 
         if (recetaEncontrada) {
             const recetaId = recetaEncontrada.id;
@@ -118,13 +129,21 @@ function importarRangoFechas() {
                 acumuladorPlatosRango[recetaId] = 0;
             }
             acumuladorPlatosRango[recetaId] += comensales;
+        } else {
+            if (!noEncontrados.includes(p.nombrePlato)) {
+                noEncontrados.push(p.nombrePlato);
+            }
         }
     });
+
+    if (noEncontrados.length > 0) {
+        console.warn("Platos en el cronograma que no coinciden con ninguna receta en la base de datos:", noEncontrados);
+    }
 
     const recetaIdsUnicos = Object.keys(acumuladorPlatosRango);
 
     if (recetaIdsUnicos.length === 0) {
-        alert("Los platos del cronograma en este rango no coinciden con ninguna receta activa.");
+        alert("Se encontraron registros en las fechas, pero los nombres de los platos no coinciden con las recetas registradas en 'Menú Tipo'. Revisa la consola (F12).");
         agregarFilaSelectorMenu();
         return;
     }
